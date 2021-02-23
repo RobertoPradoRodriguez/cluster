@@ -1,0 +1,15 @@
+# Variables for Vagrantfile
+
+variables:
+  HEAD_NODE_IP: 10.10.1.2
+  HEAD_NODE_MEM: 2048
+  HEAD_NODE_CORES: 1
+  NUM_COMPUTE_NODES: 1
+  COMPUTE_NODE_MEM: 1536
+  COMPUTE_NODE_CORES: 1
+
+users:
+  - Juan
+  - Luis
+
+sharedpath: /prueba

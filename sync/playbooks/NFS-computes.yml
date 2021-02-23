@@ -1,0 +1,52 @@
+---
+- hosts: computes
+  become: true
+
+  tasks:
+    - name: Read vars of variables.yml file
+      include_vars:
+        file: ../variables.yml
+        name: stuff
+    
+    - block:
+      - name: COMPUTES - Creates directory
+        file:
+          path: "{{ stuff.sharedpath }}"
+          state: directory
+
+      - name: COMPUTES - Mount home directory through NFS (custom share path)
+        mount:
+          src: head:{{ stuff.sharedpath }}
+          path: "{{ stuff.sharedpath }}"
+          opts: rw,sync,hard,intr
+          state: mounted
+          fstype: nfs
+      when: stuff.sharedpath | default('', true) | trim != ''
+
+    - block:
+      - name: COMPUTES - Creates directory
+        file:
+          path: /share
+          state: directory
+
+      - name: COMPUTES - Mount home directory through NFS (default share path)
+        mount:
+          src: head:/share
+          path: /share
+          opts: rw,sync,hard,intr
+          state: mounted
+          fstype: nfs
+      when: stuff.sharedpath | default('', true) | trim == ''
+
+    - name: COMPUTES - Creates directory (/nfs/home)
+      file:
+        path: /nfs/home
+        state: directory
+
+    - name: COMPUTES - Mount home directory through NFS (users home)
+      mount:
+        src: head:/home
+        path: /nfs/home
+        opts: rw,sync,hard,intr
+        state: mounted
+        fstype: nfs

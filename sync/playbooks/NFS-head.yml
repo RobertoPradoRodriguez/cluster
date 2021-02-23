@@ -1,0 +1,71 @@
+---
+- hosts: head
+  become: true
+
+  tasks:
+    - name: HEAD - Enable and start NFS server
+      systemd:
+        name: nfs-server
+        enabled: yes
+        state: started
+
+    - name: Read vars of variables.yml file
+      include_vars:
+        file: ../variables.yml
+        name: stuff
+
+    - block:
+      - name: HEAD - Creates custom directory to share
+        file:
+          path: "{{ stuff.sharedpath }}"
+          state: directory
+
+      - name: HEAD - Edit /etc/exports (custom share path)
+        lineinfile:
+          path: /etc/exports
+          line: '{{ stuff.sharedpath }}    compute-*(rw,sync)'
+      when: stuff.sharedpath | default('', true) | trim != ''
+    
+    - block:
+      - name: HEAD - If not specified directory, create default "/share"
+        file:
+          path: /share
+          state: directory    
+      
+      - name: HEAD - Edit /etc/exports (default share path)
+        lineinfile:
+          path: /etc/exports
+          line: '/share    compute-*(rw,sync)'
+      when: stuff.sharedpath | default('', true) | trim == ''
+
+    - name: HEAD - Edit /etc/exports (users home)
+      lineinfile:
+        path: /etc/exports
+        line: '/home    compute-*(rw,sync)'
+
+    - name: HEAD - Restart NFS server after modify /etc/exports
+      systemd:
+        name: nfs-server
+        state: restarted
+
+    - name: HEAD - Permit services for NFS in firewall
+      firewalld:
+        service: nfs
+        permanent: yes
+        state: enabled
+        zone: public
+
+    - firewalld:
+        service: mountd
+        permanent: yes
+        state: enabled
+        zone: public
+
+    - firewalld:
+        service: rpc-bind
+        permanent: yes
+        state: enabled
+        zone: public
+
+    - name: HEAD - Reload firewall to apply changes
+      shell: "firewall-cmd --reload"

@@ -1,0 +1,27 @@
+
+-   hosts: all
+    become: true
+    #become_user: vagrant
+
+    tasks:
+        #- debug: var=group_names
+
+        - name: Copy one file from head to the computes
+          copy:
+            src: /home/vagrant/file1.txt
+            dest: /home/vagrant/file2.txt
+          when: "'computes' in group_names" # Could be "not in group_name" for refer to HEAD
+
+        #- debug: var=inventory_hostname
+        #- debug: var=ansible_hostname
+
+        #- name: Copy from the computes to head
+        #  fetch:
+        #    src: /home/vagrant/file2.txt
+        #    dest: /home/vagrant/file2.txt
+        #    flat: yes
+        #  when: ansible_hostname != "head"
+
+        #- debug: var=groups['computes']
+        #- debug: var=groups.computes
+        #- debug: var=groups.all
