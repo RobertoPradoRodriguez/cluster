@@ -21,7 +21,9 @@ output = t.render(
 		HEAD_NODE_CORES		= doc["variables"]["HEAD_NODE_CORES"],
 		NUM_COMPUTE_NODES	= doc["variables"]["NUM_COMPUTE_NODES"],
 		COMPUTE_NODE_MEM	= doc["variables"]["COMPUTE_NODE_MEM"],
-		COMPUTE_NODE_CORES	= doc["variables"]["COMPUTE_NODE_CORES"])
+		COMPUTE_NODE_CORES	= doc["variables"]["COMPUTE_NODE_CORES"],
+		EXTRA_DISKS			= doc["variables"]["EXTRA_DISKS"],
+		EXTRA_DISKS_MEM_GB	= doc["variables"]["EXTRA_DISKS_MEM_GB"])
 
 with open("Vagrantfile", "w") as Vagrantfile:
     Vagrantfile.write(output)

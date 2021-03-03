@@ -5,6 +5,8 @@ HEAD_NODE_CORES 	= {{ HEAD_NODE_CORES }}
 NUM_COMPUTE_NODES 	= {{ NUM_COMPUTE_NODES }}
 COMPUTE_NODE_MEM 	= {{ COMPUTE_NODE_MEM }}
 COMPUTE_NODE_CORES 	= {{ COMPUTE_NODE_CORES }}
+EXTRA_DISKS         = {{ EXTRA_DISKS }}
+EXTRA_DISKS_MEM_GB  = {{ EXTRA_DISKS_MEM_GB }}
 require 'ipaddr'
 CLUSTER_IP_ADDR = IPAddr.new HEAD_NODE_IP
 CLUSTER_IP_ADDR = CLUSTER_IP_ADDR.succ
@@ -18,6 +20,16 @@ Vagrant.configure("2") do |config|
         head.vm.hostname = "head"
         head.vm.network :private_network, ip: HEAD_NODE_IP
 
+        (1..EXTRA_DISKS).each do |i|
+        	head.vm.disk :disk, name: "disk#{i}", size: EXTRA_DISKS_MEM_GB * 1024 * 1024 * 1024
+        end
+        #head.vm.disk :disk, name: "disk1", size: "1GB"
+        #head.vm.disk :disk, name: "disk2", size: "1GB"
+        #head.ssh.username = 'root'
+        #head.ssh.password = 'vagrant'
+        #head.ssh.insert_key = 'false'
+        #head.ssh.private_key_path = '/home/roberto/.vagrant.d/insecure_private_key'
+
         head.vm.provider :virtualbox do |vb|
             vb.cpus = HEAD_NODE_CORES
             vb.memory = HEAD_NODE_MEM
@@ -25,7 +37,7 @@ Vagrant.configure("2") do |config|
         
         ###   export VAGRANT_EXPERIMENTAL="dependency_provisioners"   ###
         # Install ansible on the head node
-        head.vm.provision "ansible-install", type: "shell", before: "global", \
+        head.vm.provision "ansible-install", type: "shell", \
         path: "./provisioning/ansible-install-config.sh" \
         do |script|
             script.args = [NUM_COMPUTE_NODES]
@@ -40,16 +52,31 @@ Vagrant.configure("2") do |config|
         #    trigger.only_on = "compute-0"
         #end
 
+        # Initial configs in ALL nodes
+        head.vm.provision "Init", type: "ansible_local", before: "RAID" \
+        do |ansible|
+            ansible.playbook = "playbooks/init.yml"
+            ansible.inventory_path = "/etc/ansible/hosts"
+            ansible.limit = "all"
+        end
+        # Create RAID for /home and /share
+        head.vm.provision "RAID", type: "ansible_local" \
+        do |ansible|
+            ansible.playbook = "playbooks/RAID.yml"
+            ansible.inventory_path = "/etc/ansible/hosts"
+            ansible.limit = "all"
+        end
+
         ##### SSH HBA using Ansible #####
         # Changes in HEAD
-        head.vm.provision "HBA-head", type: "ansible_local", after: "ansible-install",
+        head.vm.provision "HBA-head", type: "ansible_local", after: "RAID",
         preserve_order: true do |ansible|
             ansible.playbook = "playbooks/HBA-head.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
         # Changes in COMPUTES
-        head.vm.provision "HBA-computes", type: "ansible_local", after: "ansible-install", 
+        head.vm.provision "HBA-computes", type: "ansible_local", after: "RAID", 
         preserve_order: true do |ansible|
             ansible.playbook = "playbooks/HBA-computes.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
@@ -58,7 +85,7 @@ Vagrant.configure("2") do |config|
         #################################
 
         ### Create users in all nodes
-        head.vm.provision "Users", type: "ansible_local", after: "ansible-install" \
+        head.vm.provision "Users", type: "ansible_local", after: "RAID" \
         do |ansible|
             ansible.playbook = "playbooks/users.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
@@ -67,7 +94,7 @@ Vagrant.configure("2") do |config|
 
         ##### NFS ######
         # Changes in HEAD
-        head.vm.provision "NFS-head", type: "ansible_local", after: "ansible-install" \
+        head.vm.provision "NFS-head", type: "ansible_local", after: "RAID" \
         do |ansible|
             ansible.playbook = "playbooks/NFS-head.yml"
             ansible.inventory_path = "/etc/ansible/hosts"

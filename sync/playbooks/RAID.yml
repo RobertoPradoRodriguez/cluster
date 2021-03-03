@@ -1,0 +1,119 @@
+- hosts: head
+  become: true
+
+  tasks:
+    - name: Read vars of variables.yml file
+      include_vars:
+        file: ../variables.yml
+        name: stuff
+    
+    - name: Install mdadm
+      yum: 
+        name: mdadm 
+        state: present
+
+    - name: Create RAID
+      shell: "if [ ! -f /etc/mdadm.conf ]; then \
+      yes | mdadm --create --verbose /dev/md0 --level=1 \
+      --raid-devices={{ stuff.variables.EXTRA_DISKS }} `ls /dev/sd[b-z]`; fi"
+
+    - name: Create file for RAID config
+      shell: mdadm --detail --scan > /etc/mdadm.conf
+
+    - name: Create a Volume Group
+      lvg:
+        vg: vg_raid
+        pvs: /dev/md0
+
+    - name: Creates Logical Volumes (/home)
+      lvol:
+        vg: vg_raid
+        lv: lv_home
+        size: 50%VG
+        pvs: /dev/md0
+
+    - name: Creates filesystem in LV (/home)
+      filesystem:
+        fstype: xfs
+        dev: /dev/mapper/vg_raid-lv_home
+
+    - name: Save home
+      copy:
+        src: /home/vagrant/.ssh
+        dest: /tmp/
+        force: yes
+        directory_mode: yes
+      #when: ansible_hostname == "head"
+
+    - name: Mount virtual partition in HOME
+      mount:
+        src: /dev/mapper/vg_raid-lv_home
+        path: /home
+        fstype: xfs
+        state: mounted 
+
+    - name: creates /home/vagrant
+      file:
+        state: directory 
+        path: /home/vagrant/.ssh
+    
+    - name: Restore home
+      shell: "cp -r /tmp/.ssh/* /home/vagrant/.ssh/"
+
+    #- name: Restore home
+    #  copy: 
+    #    src: /tmp/.ssh
+    #    dest: /home/vagrant/
+    #    force: yes
+    #    directory_mode: yes
+    #  when: ansible_hostname == "head"
+    
+    - name: Change permissions
+      file:
+        path: /home/vagrant/
+        owner: vagrant
+        group: vagrant
+        mode: '0700'
+        recurse: yes
+
+    ####### SHARED FOLDER ########
+
+    - name: Creates Logical Volumes (shared path)
+      lvol:
+        vg: vg_raid
+        lv: lv_share
+        size: 50%VG
+        pvs: /dev/md0
+
+    - name: Creates filesystem in LV (shared path)
+      filesystem:
+        fstype: xfs
+        dev: /dev/mapper/vg_raid-lv_share
+
+    - block:
+      - name: HEAD - Creates custom directory to share
+        file:
+          path: "{{ stuff.sharedpath }}"
+          state: directory
+
+      - name: Mount virtual partition in SHARED FOLDER
+        mount:
+          src: /dev/mapper/vg_raid-lv_share
+          path: "{{ stuff.sharedpath }}"
+          fstype: xfs
+          state: mounted 
+      when: stuff.sharedpath | default('', true) | trim != ''
+
+    - block:
+      - name: HEAD - If not specified directory, create default "/share"
+        file:
+          path: /share
+          state: directory    
+      
+      - name: Mount virtual partition in SHARED FOLDER
+        mount:
+          src: /dev/mapper/vg_raid-lv_share
+          path: /share
+          fstype: xfs
+          state: mounted
+      when: stuff.sharedpath | default('', true) | trim == ''

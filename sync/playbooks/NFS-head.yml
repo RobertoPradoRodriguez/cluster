@@ -15,10 +15,10 @@
         name: stuff
 
     - block:
-      - name: HEAD - Creates custom directory to share
-        file:
-          path: "{{ stuff.sharedpath }}"
-          state: directory
+      #- name: HEAD - Creates custom directory to share
+      #  file:
+      #    path: "{{ stuff.sharedpath }}"
+      #    state: directory
 
       - name: HEAD - Edit /etc/exports (custom share path)
         lineinfile:
@@ -27,10 +27,10 @@
       when: stuff.sharedpath | default('', true) | trim != ''
     
     - block:
-      - name: HEAD - If not specified directory, create default "/share"
-        file:
-          path: /share
-          state: directory    
+      #- name: HEAD - If not specified directory, create default "/share"
+      #  file:
+      #    path: /share
+      #    state: directory    
       
       - name: HEAD - Edit /etc/exports (default share path)
         lineinfile:

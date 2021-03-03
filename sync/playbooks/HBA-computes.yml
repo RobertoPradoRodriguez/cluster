@@ -1,7 +1,6 @@
 ---
 - hosts: computes
   become: true
-  #become_user: vagrant
 
   tasks:
     - name: COMPUTES - Copy ssh key from head to computes

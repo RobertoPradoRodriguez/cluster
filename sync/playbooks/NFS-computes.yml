@@ -14,7 +14,7 @@
           path: "{{ stuff.sharedpath }}"
           state: directory
 
-      - name: COMPUTES - Mount home directory through NFS (custom share path)
+      - name: COMPUTES - Mount shared directory through NFS (custom share path)
         mount:
           src: head:{{ stuff.sharedpath }}
           path: "{{ stuff.sharedpath }}"
@@ -29,7 +29,7 @@
           path: /share
           state: directory
 
-      - name: COMPUTES - Mount home directory through NFS (default share path)
+      - name: COMPUTES - Mount shared directory through NFS (default share path)
         mount:
           src: head:/share
           path: /share
@@ -50,3 +50,9 @@
         opts: rw,sync,hard,intr
         state: mounted
         fstype: nfs
+
+    - name: Creates an entry to mount by NFS AFTER NETWORK is UP
+      cron:
+        name: Ping to the HEAD to test network
+        special_time: reboot
+        job: "until ping -c 1 head; do : ; done && mount -a"
