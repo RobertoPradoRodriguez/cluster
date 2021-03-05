@@ -9,9 +9,10 @@ variables:
   COMPUTE_NODE_CORES: 1
   EXTRA_DISKS: 3
   EXTRA_DISKS_MEM_GB: 1 
+  RAID_LEVEL: 5
 
 users:
   - Juan
   - Luis
 
-sharedpath: /prueba
+sharedpath: /shared

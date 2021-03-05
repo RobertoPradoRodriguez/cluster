@@ -20,6 +20,9 @@ Vagrant.configure("2") do |config|
         head.vm.hostname = "head"
         head.vm.network :private_network, ip: HEAD_NODE_IP
 
+        if EXTRA_DISKS < 2 then EXTRA_DISKS = 2 end
+        #puts EXTRA_DISKS
+
         (1..EXTRA_DISKS).each do |i|
         	head.vm.disk :disk, name: "disk#{i}", size: EXTRA_DISKS_MEM_GB * 1024 * 1024 * 1024
         end
@@ -63,7 +66,7 @@ Vagrant.configure("2") do |config|
         head.vm.provision "RAID", type: "ansible_local" \
         do |ansible|
             ansible.playbook = "playbooks/RAID.yml"
-            ansible.inventory_path = "/etc/ansible/hosts"
+           ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
 
@@ -78,7 +81,7 @@ Vagrant.configure("2") do |config|
         # Changes in COMPUTES
         head.vm.provision "HBA-computes", type: "ansible_local", after: "RAID", 
         preserve_order: true do |ansible|
-            ansible.playbook = "playbooks/HBA-computes.yml"
+           ansible.playbook = "playbooks/HBA-computes.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end

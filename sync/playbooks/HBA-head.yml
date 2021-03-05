@@ -1,7 +1,10 @@
 ---
 - hosts: head
   become: true
-  #become_user: vagrant
+  become_user: root
+
+  environment:
+    HOME: /vagranthome
 
   tasks:
     - name: HEAD - edit /etc/ssh/ssh_config [1]

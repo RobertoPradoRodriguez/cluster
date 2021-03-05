@@ -2,7 +2,14 @@
 - hosts: computes
   become: true
 
+  environment:
+    HOME: "/vagranthome"
+    ANSIBLE_PERSISTENT_CONTROL_PATH_DIR: "/tmp/.ansible/cp"
+    ANSIBLE_SSH_CONTROL_PATH_DIR: "/tmp/.ansible/cp_ssh"
+
   tasks:
+    - shell: "export ANSIBLE_SSH_CONTROL_PATH_DIR=/tmp/.ansible/cp_ssh"
+
     - name: COMPUTES - Copy ssh key from head to computes
       shell: "ssh-keyscan head > /etc/ssh/ssh_known_hosts"
 

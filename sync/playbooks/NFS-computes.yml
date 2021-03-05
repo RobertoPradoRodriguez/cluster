@@ -18,7 +18,7 @@
         mount:
           src: head:{{ stuff.sharedpath }}
           path: "{{ stuff.sharedpath }}"
-          opts: rw,sync,hard,intr
+          opts: rw,sync,hard,intr,_netdev,retry=1
           state: mounted
           fstype: nfs
       when: stuff.sharedpath | default('', true) | trim != ''
@@ -33,23 +33,24 @@
         mount:
           src: head:/share
           path: /share
-          opts: rw,sync,hard,intr
+          opts: rw,sync,hard,intr,_netdev,retry=1
           state: mounted
           fstype: nfs
       when: stuff.sharedpath | default('', true) | trim == ''
 
-    - name: COMPUTES - Creates directory (/nfs/home)
-      file:
-        path: /nfs/home
-        state: directory
+    #- name: COMPUTES - Creates directory (/nfs/home)
+    #  file:
+    #    path: /nfs/home
+    #    state: directory
 
     - name: COMPUTES - Mount home directory through NFS (users home)
       mount:
         src: head:/home
-        path: /nfs/home
-        opts: rw,sync,hard,intr
+        path: /home
+        opts: rw,sync,hard,intr,_netdev,retry=1
         state: mounted
         fstype: nfs
+      ignore_errors: yes
 
     - name: Creates an entry to mount by NFS AFTER NETWORK is UP
       cron:

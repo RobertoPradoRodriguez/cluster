@@ -44,6 +44,3 @@ then
     sed -i '/root@head/d' /home/vagrant/.ssh/authorized_keys
     cat /vagrant/ssh-keys/id_rsa.pub >> /home/vagrant/.ssh/authorized_keys
 fi
-
-# Install NFS
-yum install -y nfs-utils.x86_64

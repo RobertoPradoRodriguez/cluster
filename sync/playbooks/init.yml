@@ -1,7 +1,19 @@
 - hosts: all
   become: true
 
+  environment:
+    HOME: /vagranthome
+
   tasks:
+    - name: Install NFS
+      yum: 
+        name: nfs-utils.x86_64 
+        state: present
+
+    - name: Disable SELinux
+      selinux:
+        state: disabled
+
     - name: Encrypt the root's password 
       command: openssl passwd -crypt toor
       register: crypted_password
@@ -12,18 +24,37 @@
         update_password: always 
         password: "{{ crypted_password.stdout }}"
 
-    - name: Change locale and keymap
+    - name: Set locale
       command: localectl set-locale LANG=es_ES
     
-    - command: localectl set-keymap es
+    - name: Set keymap
+      command: localectl set-keymap es
 
-    - name: Disable SELinux
-      selinux:
-        state: disabled
+    - name: Creates /vagranthome (new home)
+      file:
+        state: directory 
+        path: /vagranthome
+        owner: vagrant
+        group: vagrant
+        force: yes
 
-    #- name: Change permissions for SYNC folder (/vagrant)
-    #  file:
-    #    path: /vagrant
-    #    mode: '0777'
-    #    owner: root
-    #    group: root
+    - name: Copy old home files to new home
+      shell: "if [ -d /home/vagrant ]; then \
+      cp -rp /home/vagrant/.ssh /vagranthome; fi"
+
+    #- name: Edit vagrant home (falla al intentar cambiar el usuario en uso)
+    #  user:
+    #    name: vagrant
+    #    home: /vagranthome
+    #    move_home: yes
+
+    - name: Edit home in /etc/passwd file
+      replace: 
+        path: /etc/passwd
+        regexp: '^vagrant.*$'
+        replace: 'vagrant:x:1000:1000::/vagranthome:/bin/bash'
+
+    - name: Restart SSHD service to apply changes
+      systemd:
+        name: sshd
+        state: restarted
