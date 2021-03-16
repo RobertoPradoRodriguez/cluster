@@ -1,4 +1,3 @@
----
 - hosts: head
   become: true
 
@@ -14,28 +13,16 @@
         file: ../variables.yml
         name: stuff
 
-    - block:
-      #- name: HEAD - Creates custom directory to share
-      #  file:
-      #    path: "{{ stuff.sharedpath }}"
-      #    state: directory
-
-      - name: HEAD - Edit /etc/exports (custom share path)
-        lineinfile:
-          path: /etc/exports
-          line: '{{ stuff.sharedpath }}    compute-*(rw,sync)'
+    - name: HEAD - Edit /etc/exports (custom share path)
+      lineinfile:
+        path: /etc/exports
+        line: '{{ stuff.sharedpath }}    compute-*(rw,sync)'
       when: stuff.sharedpath | default('', true) | trim != ''
-    
-    - block:
-      #- name: HEAD - If not specified directory, create default "/share"
-      #  file:
-      #    path: /share
-      #    state: directory    
       
-      - name: HEAD - Edit /etc/exports (default share path)
-        lineinfile:
-          path: /etc/exports
-          line: '/share    compute-*(rw,sync)'
+    - name: HEAD - Edit /etc/exports (default share path)
+      lineinfile:
+        path: /etc/exports
+        line: '/share    compute-*(rw,sync)'
       when: stuff.sharedpath | default('', true) | trim == ''
 
     - name: HEAD - Edit /etc/exports (users home)
@@ -48,20 +35,22 @@
         name: nfs-server
         state: restarted
 
-    - name: HEAD - Permit services for NFS in firewall
+    - name: HEAD - Permit NFS service in firewall
       firewalld:
         service: nfs
         permanent: yes
         state: enabled
         zone: public
 
-    - firewalld:
+    - name: HEAD - Permit mountd service in firewall
+      firewalld:
         service: mountd
         permanent: yes
         state: enabled
         zone: public
-
-    - firewalld:
+    
+    - name: HEAD - Permit rpc-bind service in firewall
+      firewalld:
         service: rpc-bind
         permanent: yes
         state: enabled

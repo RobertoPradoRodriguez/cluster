@@ -7,12 +7,14 @@ variables:
   NUM_COMPUTE_NODES: 1
   COMPUTE_NODE_MEM: 1536
   COMPUTE_NODE_CORES: 1
-  EXTRA_DISKS: 3
-  EXTRA_DISKS_MEM_GB: 1 
-  RAID_LEVEL: 5
-
+  DISKS_HEAD: 5
+  DISKS_HEAD_MEM_GB: 1 
+  RAID_LEVEL: 10
+  DISKS_COMPUTES: 5
+  DISKS_COMPUTES_MEM_GB: 1
+  
 users:
   - Juan
   - Luis
 
-sharedpath: /shared
+sharedpath: /compartir/uno

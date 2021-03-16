@@ -7,14 +7,14 @@
         file: ../variables.yml
         name: stuff
 
-    - name: Add several users (HEAD - /home directory)
+    - name: HEAD - Add several users
       user: 
         name: "{{ item }}"
         state: present
       loop: "{{ stuff.users }}"
       when: ansible_hostname == "head"
 
-    - name: Add several users (COMPUTES - without /home)
+    - name: COMPUTES - Add several users (without /home)
       user: 
         name: "{{ item }}"
         state: present

@@ -1,12 +1,15 @@
 # -*- mode: ruby -*-
-HEAD_NODE_IP 		= "10.10.1.2"
-HEAD_NODE_MEM 		= 2048
-HEAD_NODE_CORES 	= 1
-NUM_COMPUTE_NODES 	= 1
-COMPUTE_NODE_MEM 	= 1536
-COMPUTE_NODE_CORES 	= 1
-EXTRA_DISKS         = 3
-EXTRA_DISKS_MEM_GB  = 1
+HEAD_NODE_IP 			= "10.10.1.2"
+HEAD_NODE_MEM 			= 2048
+HEAD_NODE_CORES 		= 1
+NUM_COMPUTE_NODES 		= 1
+COMPUTE_NODE_MEM 		= 1536
+COMPUTE_NODE_CORES 		= 1
+DISKS_HEAD         		= 5
+DISKS_HEAD_MEM_GB  		= 1
+DISKS_COMPUTES			= 5
+DISKS_COMPUTES_MEM_GB 	= 1
+
 require 'ipaddr'
 CLUSTER_IP_ADDR = IPAddr.new HEAD_NODE_IP
 CLUSTER_IP_ADDR = CLUSTER_IP_ADDR.succ
@@ -15,29 +18,39 @@ Vagrant.configure("2") do |config|
     config.vm.box = "generic/centos8"
     config.vm.synced_folder "sync", "/vagrant", type: "virtualbox", mount_options: ["dmode=775,fmode=777"]
 
+    config.hostmanager.enabled = true
+    config.hostmanager.manage_host = false
+    config.hostmanager.manage_guest = true
+    config.hostmanager.ignore_private_ip = false
+    config.hostmanager.include_offline = true
+    
     # Head node
     config.vm.define "head", primary: true do |head|
         head.vm.hostname = "head"
         head.vm.network :private_network, ip: HEAD_NODE_IP
 
-        if EXTRA_DISKS < 2 then EXTRA_DISKS = 2 end
-        #puts EXTRA_DISKS
+        if DISKS_HEAD < 2 then DISKS_HEAD = 2 end
+        #puts DISKS_HEAD
 
-        (1..EXTRA_DISKS).each do |i|
-        	head.vm.disk :disk, name: "disk#{i}", size: EXTRA_DISKS_MEM_GB * 1024 * 1024 * 1024
-        end
+        #(1..DISKS_HEAD).each do |i|
+        #	head.vm.disk :disk, name: "disk#{i}", size: DISKS_HEAD_MEM_GB * 1024 * 1024 * 1024
+        #end
         #head.vm.disk :disk, name: "disk1", size: "1GB"
-        #head.vm.disk :disk, name: "disk2", size: "1GB"
-        #head.ssh.username = 'root'
-        #head.ssh.password = 'vagrant'
-        #head.ssh.insert_key = 'false'
-        #head.ssh.private_key_path = '/home/roberto/.vagrant.d/insecure_private_key'
 
         head.vm.provider :virtualbox do |vb|
             vb.cpus = HEAD_NODE_CORES
             vb.memory = HEAD_NODE_MEM
+            unless File.exist?(".vagrant/machines/head/virtualbox/private_key")
+            	vb.customize ["storagectl", :id, "--name", "SATA Controller", "--add", "sata"]
+            end
+            (1..DISKS_HEAD).each do |j|
+            	filename = "./disks/head/disk#{j}.vmdk"
+            	unless File.exist?(filename)
+                	vb.customize ["createmedium", "disk", "--filename", filename, "--size", DISKS_HEAD_MEM_GB * 1024]
+                 	vb.customize ["storageattach", :id, "--storagectl", "SATA Controller", "--port", j + 1, "--device", 0, "--type", "hdd", "--medium", filename]
+                end
+            end
         end
-        
         ###   export VAGRANT_EXPERIMENTAL="dependency_provisioners"   ###
         # Install ansible on the head node
         head.vm.provision "ansible-install", type: "shell", \
@@ -49,11 +62,6 @@ Vagrant.configure("2") do |config|
         # Generate ssh-keys
         #head.vm.provision "gen-ssh-keys", type: "shell", before: "global", \
         #path: "./provisioning/ssh-gen-head-keys.sh"
-        
-        #head.trigger.after :up do |trigger|
-        #    trigger.run = {path: "./provisioning/mock.sh"}
-        #    trigger.only_on = "compute-0"
-        #end
 
         # Initial configs in ALL nodes
         head.vm.provision "Init", type: "ansible_local", before: "RAID" \
@@ -67,6 +75,14 @@ Vagrant.configure("2") do |config|
         do |ansible|
             ansible.playbook = "playbooks/RAID.yml"
            ansible.inventory_path = "/etc/ansible/hosts"
+            ansible.limit = "all"
+        end
+
+        #### Directories /scratch in COMPUTES
+        head.vm.provision "Scratch", type: "ansible_local", after: "RAID",
+        preserve_order: true do |ansible|
+            ansible.playbook = "playbooks/scratch.yml"
+            ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
 
@@ -124,6 +140,16 @@ Vagrant.configure("2") do |config|
             compute.vm.provider :virtualbox do |vb|
                 vb.cpus = COMPUTE_NODE_CORES
                 vb.memory = COMPUTE_NODE_MEM
+                unless File.exist?(".vagrant/machines/compute-#{i - 1}/virtualbox/private_key")
+            		vb.customize ["storagectl", :id, "--name", "SATA Controller", "--add", "sata"]
+            	end
+            	(1..DISKS_COMPUTES).each do |j|
+            		filename = "./disks/compute-#{i - 1}/disk#{j}.vmdk"
+            		unless File.exist?(filename)
+                  		vb.customize ["createmedium", "disk", "--filename", filename, "--size", DISKS_COMPUTES_MEM_GB * 1024]
+                  		vb.customize ["storageattach", :id, "--storagectl", "SATA Controller", "--port", j + 1, "--device", 0, "--type", "hdd", "--medium", filename]
+                	end
+            	end
             end
             #compute.vm.provision "mock", type: "shell", path: "./provisioning/mock.sh"
         end

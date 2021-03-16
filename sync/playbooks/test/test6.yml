@@ -1,0 +1,31 @@
+- hosts: head
+  become: true
+
+  tasks:
+    - name: Read vars of variables.yml file
+      include_vars:
+        file: ../../variables.yml
+        name: stuff
+
+    - debug: var={{ stuff.variables.DISKS_COMPUTES - 1 }}
+
+    - name: COMPUTES - Creates directory scratch
+      file:
+        path: /scratch{{ item }}
+        state: directory
+      loop: "{{ range(0, stuff.variables.DISKS_COMPUTES) | list }}"
+      #with_sequence: start=0 end={{ stuff.variables.DISKS_COMPUTES - 1 }}
+
+    - name: "Register output"
+      shell: "ls /dev/sd[b-z]"
+      #shell: "lsblk | tail -5 | cut -d ' ' -f 1 | cut -c 3"
+      register: reg
+
+    - name: debug
+      shell: "echo {{ item.0 }} - {{ item.1 }} >> /prueba.txt"
+      #loop: "{{ reg.stdout_lines }}"
+      #loop: "{{ reg.stdout | list }}"
+      with_together:
+        - "{{ reg.stdout_lines }}"
+        - "{{ range(0, stuff.variables.DISKS_COMPUTES) | list }}"
+      #loop: "{{ reg.stdout_lines|zip(range(0, stuff.variables.DISKS_COMPUTES) | list) | list }}"

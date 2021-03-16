@@ -39,7 +39,7 @@
         force: yes
 
     - name: Copy old home files to new home
-      shell: "if [ -d /home/vagrant ]; then \
+      shell: "if [ ! -d /vagranthome/.ssh ]; then \
       cp -rp /home/vagrant/.ssh /vagranthome; fi"
 
     #- name: Edit vagrant home (falla al intentar cambiar el usuario en uso)

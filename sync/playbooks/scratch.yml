@@ -1,0 +1,38 @@
+- hosts: computes
+  become: true
+
+  tasks:
+    - name: Read vars of variables.yml file
+      include_vars:
+        file: ../variables.yml
+        name: stuff
+
+    - block:
+      - name: COMPUTES - Creates directory scratch
+        file:
+          path: /scratch{{ item }}
+          state: directory
+        loop: "{{ range(0, stuff.variables.DISKS_COMPUTES) | list }}"
+
+      - name: "Register output"
+        shell: "ls /dev/sd[b-z]"
+        register: reg
+
+      - name: Creates filesystem
+        filesystem:
+          fstype: xfs
+          dev: "{{ item }}"
+        loop: "{{ reg.stdout_lines|flatten(levels=1) }}"
+        #with_items: "{{ reg.stdout_lines }}"
+
+      - name: Mount 
+        mount:
+          src: "{{ item.0 }}"
+          path: /scratch{{ item.1 }}
+          fstype: xfs
+          state: mounted
+        with_together:
+          - "{{ reg.stdout_lines }}"
+          - "{{ range(0, stuff.variables.DISKS_COMPUTES) | list }}"
+
+      when: stuff.variables.DISKS_COMPUTES > 0

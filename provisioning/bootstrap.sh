@@ -5,27 +5,27 @@ if [ "$#" -ne 2 ]; then
     exit
 fi
 
-NUM_COMPUTE_NODES=$1
-HEAD_NODE_IP=$2
+#NUM_COMPUTE_NODES=$1
+#HEAD_NODE_IP=$2
 
 # Populate /etc/hosts
-sed -i "/$HOSTNAME/d" /etc/hosts
+#sed -i "/$HOSTNAME/d" /etc/hosts
 
-if ! grep -Fq $HEAD_NODE_IP /etc/hosts ; then
-    echo -e "$HEAD_NODE_IP \t head" >> /etc/hosts
-fi
+#if ! grep -Fq $HEAD_NODE_IP /etc/hosts ; then
+#    echo -e "$HEAD_NODE_IP \t head" >> /etc/hosts
+#fi
 
-CLUSTER_NETWORK=`echo $HEAD_NODE_IP | cut -d "." -f 1,2,3`
-FIRST_IP=`echo $HEAD_NODE_IP | cut -d "." -f 4`
-ini=$(($FIRST_IP+1))
-fin=$(($FIRST_IP+$NUM_COMPUTE_NODES))
-num=0
-for (( i=$ini; i<=$fin; i++ )); do
-    if ! grep -Fq $CLUSTER_NETWORK.$i /etc/hosts ; then
-        echo -e "$CLUSTER_NETWORK.$i \t compute-$num" >> /etc/hosts
-    fi
-    num=$((num+1))
-done
+#CLUSTER_NETWORK=`echo $HEAD_NODE_IP | cut -d "." -f 1,2,3`
+#FIRST_IP=`echo $HEAD_NODE_IP | cut -d "." -f 4`
+#ini=$(($FIRST_IP+1))
+#fin=$(($FIRST_IP+$NUM_COMPUTE_NODES))
+#num=0
+#for (( i=$ini; i<=$fin; i++ )); do
+#    if ! grep -Fq $CLUSTER_NETWORK.$i /etc/hosts ; then
+#        echo -e "$CLUSTER_NETWORK.$i \t compute-$num" >> /etc/hosts
+#    fi
+#    num=$((num+1))
+#done
 
 # Manage ssh keys from public-key access (used before configure HB Auth)
 if [[ $HOSTNAME == "head" ]] 

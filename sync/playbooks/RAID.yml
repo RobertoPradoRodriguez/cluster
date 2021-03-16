@@ -1,9 +1,6 @@
 - hosts: head
   become: true
   
-  environment:
-    HOME: /vagranthome
-
   tasks:
     - name: Read vars of variables.yml file
       include_vars:
@@ -13,7 +10,8 @@
     - name: Set variables LEVEL and DISKS
       set_fact:
         level: "{{ stuff.variables.RAID_LEVEL | default ('', true) }}"
-        disks: "{{ stuff.variables.EXTRA_DISKS | default ('', true) }}"
+        disks: "{{ stuff.variables.DISKS_HEAD | default ('', true) }}"
+        sharedpath: "{{ stuff.sharedpath | default ('', true) }}"
 
     - name: Install mdadm
       yum: 
@@ -21,47 +19,47 @@
         state: present
 
     # less than 3 disks
-    - name: Create RAID 1 (less than 3 disks)
-      shell: "if [ ! -f /etc/mdadm.conf ] || [ -s /etc/mdadm.conf ]; then \
+    - name: "< 3 DISKS: Create RAID 1"
+      shell: "if [ ! -b /dev/md0 ]; then \
       yes | mdadm --create --verbose /dev/md0 --level=1 \
       --raid-devices=2 `ls /dev/sd[b-c]`; fi"
-      when: (disks | trim == '') or (disks < "3")
+      when: (disks < "3") or (disks | trim == '')
     
     # 3 disks
-    - name: Create RAID 1 (3 disks - LEVEL DEFAULT)
-      shell: "if [ ! -f /etc/mdadm.conf ] || [ -s /etc/mdadm.conf ]; then \
+    - name: "3 DISKS: Create RAID 1"
+      shell: "if [ ! -b /dev/md0 ]; then \
       yes | mdadm --create --verbose /dev/md0 --level=1 \
       --raid-devices=3 `ls /dev/sd[b-d]`; fi"
-      when: 
-        - (level | trim == '') or ((level != "1") and (level != "5") and (level != "10")) 
+      when:
         - disks == "3"
+        - (level | trim == '') or ((level != "5") and (level != "10")) 
 
-    - name: Create RAID 1/5/10 (3 disks - CUSTOM LEVEL)
-      shell: "if [ ! -f /etc/mdadm.conf ] || [ -s /etc/mdadm.conf ]; then \
+    - name: "3 DISKS: Create RAID 5 or 10. Chosen: RAID {{ level }}"
+      shell: "if [ ! -b /dev/md0 ]; then \
       yes | mdadm --create --verbose /dev/md0 --level={{ level }} \
       --raid-devices=3 `ls /dev/sd[b-d]`; fi"
       when: 
-        - level | trim != ''
-        - (level == "1") or (level == "5") or (level == "10") 
         - disks == "3"
+        - level | trim != ''
+        - (level == "5") or (level == "10") 
 
     # 4 or more disks
-    - name: Create RAID 1 (4 or more disks - LEVEL DEFAULT)
-      shell: "if [ ! -f /etc/mdadm.conf ] || [ -s /etc/mdadm.conf ]; then \
+    - name: " > 3 DISKS: Create RAID 1"
+      shell: "if [ ! -b /dev/md0 ]; then \
       yes | mdadm --create --verbose /dev/md0 --level=1 \
       --raid-devices={{ disks }} `ls /dev/sd[b-z]`; fi"
       when:
-        - (level | trim == '') or ((level != "1") and (level != "5") and (level != "6") and (level != "10")) 
         - disks > "3"
+        - (level | trim == '') or ((level != "5") and (level != "6") and (level != "10")) 
 
-    - name: Create RAID 1/5/6/10 (4 or more disks - CUSTOM LEVEL)
-      shell: "if [ ! -f /etc/mdadm.conf ] || [ -s /etc/mdadm.conf ]; then \
+    - name: " > 3 DISKS: Create RAID 5, 6 or 10 + SPARE DISK. Chosen: RAID {{ level }}"
+      shell: "if [ ! -b /dev/md0 ]; then \
       yes | mdadm --create --verbose /dev/md0 --level={{ level }} \
-      --raid-devices={{ disks }} `ls /dev/sd[b-z]`; fi"
+      --raid-devices={{ stuff.variables.DISKS_HEAD - 1 }} `ls /dev/sd[c-z]` --spare-devices=1 /dev/sdb; fi"
       when:
-        - level | trim != ''
-        - (level == "1") or (level == "5") or (level == "6") or (level == "10")
         - disks > "3"
+        - level | trim != ''
+        - (level == "5") or (level == "6") or (level == "10")
 
     - name: Create file for RAID config
       shell: mdadm --detail --scan > /etc/mdadm.conf
@@ -71,8 +69,7 @@
         vg: vg_raid
         pvs: /dev/md0
 
-    ####### HOME FOLDER ########
-
+    ### HOME FOLDER ###
     - name: Creates Logical Volumes (/home)
       lvol:
         vg: vg_raid
@@ -99,10 +96,8 @@
         path: /home
         fstype: xfs
         state: mounted 
-
-    #- shell: "mkdir -p /home/vagrant && chown vagrant:vagrant /home/vagrant"
     
-    - name: creates /home/vagrant (only for ansible purposes)
+    - name: creates /home/vagrant (ONLY for ansible purposes)
       file:
         state: directory 
         path: /home/vagrant/
@@ -129,8 +124,7 @@
     #    mode: '0700'
     #    recurse: yes
 
-    ####### SHARED FOLDER ########
-
+    ### SHARED FOLDER ###
     - name: Creates Logical Volumes (shared path)
       lvol:
         vg: vg_raid
@@ -144,29 +138,29 @@
         dev: /dev/mapper/vg_raid-lv_share
 
     - block:
-      - name: HEAD - Creates custom directory to share
+      - name: HEAD - Create {{ sharedpath }} directory to share
         file:
           path: "{{ stuff.sharedpath }}"
           state: directory
 
-      - name: Mount virtual partition in SHARED FOLDER
+      - name: Mount virtual partition in {{ sharedpath }}
         mount:
           src: /dev/mapper/vg_raid-lv_share
-          path: "{{ stuff.sharedpath }}"
+          path: "{{ sharedpath }}"
           fstype: xfs
           state: mounted 
-      when: stuff.sharedpath | default('', true) | trim != ''
+      when: sharedpath | trim != ''
 
     - block:
-      - name: HEAD - If not specified directory, create default "/share"
+      - name: "HEAD - NOT specified: create default /share"
         file:
           path: /share
           state: directory    
       
-      - name: Mount virtual partition in SHARED FOLDER
+      - name: Mount virtual partition in /share
         mount:
           src: /dev/mapper/vg_raid-lv_share
           path: /share
           fstype: xfs
           state: mounted
-      when: stuff.sharedpath | default('', true) | trim == ''
+      when: sharedpath | trim == ''
