@@ -3,11 +3,11 @@ HEAD_NODE_IP 			= "10.10.1.2"
 HEAD_NODE_MEM 			= 2048
 HEAD_NODE_CORES 		= 1
 NUM_COMPUTE_NODES 		= 1
-COMPUTE_NODE_MEM 		= 1536
+COMPUTE_NODE_MEM 		= 1024
 COMPUTE_NODE_CORES 		= 1
-DISKS_HEAD         		= 5
+DISKS_HEAD         		= 2
 DISKS_HEAD_MEM_GB  		= 1
-DISKS_COMPUTES			= 5
+DISKS_COMPUTES			= 2
 DISKS_COMPUTES_MEM_GB 	= 1
 
 require 'ipaddr'
@@ -18,6 +18,7 @@ Vagrant.configure("2") do |config|
     config.vm.box = "generic/centos8"
     config.vm.synced_folder "sync", "/vagrant", type: "virtualbox", mount_options: ["dmode=775,fmode=777"]
 
+    # Generate /etc/hosts (plugin)
     config.hostmanager.enabled = true
     config.hostmanager.manage_host = false
     config.hostmanager.manage_guest = true
@@ -51,10 +52,10 @@ Vagrant.configure("2") do |config|
                 end
             end
         end
-        ###   export VAGRANT_EXPERIMENTAL="dependency_provisioners"   ###
+        ###   export VAGRANT_EXPERIMENTAL="dependency_provisioners,disks"   ###
         # Install ansible on the head node
         head.vm.provision "ansible-install", type: "shell", \
-        path: "./provisioning/ansible-install-config.sh" \
+        path: "./provisioning/ansible-install.sh" \
         do |script|
             script.args = [NUM_COMPUTE_NODES]
         end
@@ -70,11 +71,45 @@ Vagrant.configure("2") do |config|
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
+
+        ##### SSH HBA using Ansible #####
+        # Changes in HEAD
+        head.vm.provision "HBA-head", type: "ansible_local", before: "RAID",
+        preserve_order: true do |ansible|
+            ansible.playbook = "playbooks/HBA-head.yml"
+            ansible.inventory_path = "/etc/ansible/hosts"
+            ansible.limit = "all"
+        end
+        # Changes in COMPUTES
+        head.vm.provision "HBA-computes", type: "ansible_local", before: "RAID", 
+        preserve_order: true do |ansible|
+           ansible.playbook = "playbooks/HBA-computes.yml"
+            ansible.inventory_path = "/etc/ansible/hosts"
+            ansible.limit = "all"
+        end
+        #################################
+
         # Create RAID for /home and /share
         head.vm.provision "RAID", type: "ansible_local" \
         do |ansible|
             ansible.playbook = "playbooks/RAID.yml"
            ansible.inventory_path = "/etc/ansible/hosts"
+            ansible.limit = "all"
+        end
+
+        ### Slurm ###
+        head.vm.provision "Slurm", type: "ansible_local", after: "RAID",
+        preserve_order: true do |ansible|
+            ansible.playbook = "playbooks/slurm.yml"
+            ansible.inventory_path = "/etc/ansible/hosts"
+            ansible.limit = "all"
+        end
+
+       	### NTP ###
+        head.vm.provision "NTP", type: "ansible_local", after: "RAID",
+        preserve_order: true do |ansible|
+            ansible.playbook = "playbooks/NTP.yml"
+            ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
 
@@ -85,23 +120,6 @@ Vagrant.configure("2") do |config|
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
-
-        ##### SSH HBA using Ansible #####
-        # Changes in HEAD
-        head.vm.provision "HBA-head", type: "ansible_local", after: "RAID",
-        preserve_order: true do |ansible|
-            ansible.playbook = "playbooks/HBA-head.yml"
-            ansible.inventory_path = "/etc/ansible/hosts"
-            ansible.limit = "all"
-        end
-        # Changes in COMPUTES
-        head.vm.provision "HBA-computes", type: "ansible_local", after: "RAID", 
-        preserve_order: true do |ansible|
-           ansible.playbook = "playbooks/HBA-computes.yml"
-            ansible.inventory_path = "/etc/ansible/hosts"
-            ansible.limit = "all"
-        end
-        #################################
 
         ### Create users in all nodes
         head.vm.provision "Users", type: "ansible_local", after: "RAID" \
@@ -156,7 +174,7 @@ Vagrant.configure("2") do |config|
     end
 
     # Global provisioning bash script
-    config.vm.provision "global", type: "shell", path: "./provisioning/bootstrap.sh" \
+    config.vm.provision "ssh", type: "shell", path: "./provisioning/ssh.sh" \
     do |script|
         script.args = [NUM_COMPUTE_NODES, HEAD_NODE_IP]
     end

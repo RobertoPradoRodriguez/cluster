@@ -7,8 +7,7 @@
   #  ANSIBLE_SSH_CONTROL_PATH_DIR: "/tmp/.ansible/cp_ssh"
 
   tasks:
-    - shell: "export ANSIBLE_SSH_CONTROL_PATH_DIR=/tmp/.ansible/cp_ssh"
-
+    #- shell: "export ANSIBLE_SSH_CONTROL_PATH_DIR=/tmp/.ansible/cp_ssh"
     - name: COMPUTES - Copy ssh key from head to computes
       shell: "ssh-keyscan head > /etc/ssh/ssh_known_hosts"
 
@@ -36,7 +35,7 @@
         line: 'HostbasedAcceptedKeyTypes rsa-sha2-512,rsa-sha2-256,ssh-rsa'
         insertafter: '^HostbasedAuthentication.*'
 
-    - name: COMPUTES - Create shosts.equiv
+    - name: COMPUTES - Create shosts.equiv for access control
       shell: "if [ ! -f /etc/ssh/shosts.equiv ]; then echo 'head' > /etc/ssh/shosts.equiv; fi"
 
     - name: COMPUTES - Create /root/.shosts (root login)

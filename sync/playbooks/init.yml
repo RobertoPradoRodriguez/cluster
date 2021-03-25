@@ -1,15 +1,10 @@
 - hosts: all
   become: true
 
-  environment:
-    HOME: /vagranthome
+  #environment:
+  #  HOME: /vagranthome
 
   tasks:
-    - name: Install NFS
-      yum: 
-        name: nfs-utils.x86_64 
-        state: present
-
     - name: Disable SELinux
       selinux:
         state: disabled

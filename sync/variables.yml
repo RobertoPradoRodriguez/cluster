@@ -5,16 +5,16 @@ variables:
   HEAD_NODE_MEM: 2048
   HEAD_NODE_CORES: 1
   NUM_COMPUTE_NODES: 1
-  COMPUTE_NODE_MEM: 1536
+  COMPUTE_NODE_MEM: 1024
   COMPUTE_NODE_CORES: 1
-  DISKS_HEAD: 5
+  DISKS_HEAD: 2
   DISKS_HEAD_MEM_GB: 1 
-  RAID_LEVEL: 10
-  DISKS_COMPUTES: 5
+  RAID_LEVEL: 1
+  DISKS_COMPUTES: 2
   DISKS_COMPUTES_MEM_GB: 1
   
 users:
   - Juan
   - Luis
 
-sharedpath: /compartir/uno
+sharedpath: /share

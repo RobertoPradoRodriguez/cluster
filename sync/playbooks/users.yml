@@ -2,16 +2,16 @@
   become: true
   
   tasks:
-    - name: Read vars of variables.yml file
+    - name: Read variables of 'variables.yml' file
       include_vars:
         file: ../variables.yml
-        name: stuff
+        name: var
 
     - name: HEAD - Add several users
       user: 
         name: "{{ item }}"
         state: present
-      loop: "{{ stuff.users }}"
+      loop: "{{ var.users }}"
       when: ansible_hostname == "head"
 
     - name: COMPUTES - Add several users (without /home)
@@ -19,5 +19,5 @@
         name: "{{ item }}"
         state: present
         create_home: no
-      loop: "{{ stuff.users }}"
+      loop: "{{ var.users }}"
       when: ansible_hostname != "head"

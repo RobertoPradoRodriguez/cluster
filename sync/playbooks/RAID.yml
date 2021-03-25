@@ -2,16 +2,16 @@
   become: true
   
   tasks:
-    - name: Read vars of variables.yml file
+    - name: Read variables of 'variables.yml' file
       include_vars:
         file: ../variables.yml
-        name: stuff
+        name: var
     
     - name: Set variables LEVEL and DISKS
       set_fact:
-        level: "{{ stuff.variables.RAID_LEVEL | default ('', true) }}"
-        disks: "{{ stuff.variables.DISKS_HEAD | default ('', true) }}"
-        sharedpath: "{{ stuff.sharedpath | default ('', true) }}"
+        level: "{{ var.variables.RAID_LEVEL | default ('', true) }}"
+        disks: "{{ var.variables.DISKS_HEAD | default ('', true) }}"
+        sharedpath: "{{ var.sharedpath | default ('', true) }}"
 
     - name: Install mdadm
       yum: 
@@ -55,22 +55,22 @@
     - name: " > 3 DISKS: Create RAID 5, 6 or 10 + SPARE DISK. Chosen: RAID {{ level }}"
       shell: "if [ ! -b /dev/md0 ]; then \
       yes | mdadm --create --verbose /dev/md0 --level={{ level }} \
-      --raid-devices={{ stuff.variables.DISKS_HEAD - 1 }} `ls /dev/sd[c-z]` --spare-devices=1 /dev/sdb; fi"
+      --raid-devices={{ var.variables.DISKS_HEAD - 1 }} `ls /dev/sd[c-z]` --spare-devices=1 /dev/sdb; fi"
       when:
         - disks > "3"
         - level | trim != ''
         - (level == "5") or (level == "6") or (level == "10")
 
-    - name: Create file for RAID config
+    - name: Creates /etc/mdadm.conf for save RAID config
       shell: mdadm --detail --scan > /etc/mdadm.conf
 
-    - name: Create a Volume Group
+    - name: Create a Volume Group in RAID device
       lvg:
         vg: vg_raid
         pvs: /dev/md0
 
     ### HOME FOLDER ###
-    - name: Creates Logical Volumes (/home)
+    - name: Creates Logical Volume (/home)
       lvol:
         vg: vg_raid
         lv: lv_home
@@ -97,7 +97,7 @@
         fstype: xfs
         state: mounted 
     
-    - name: creates /home/vagrant (ONLY for ansible purposes)
+    - name: Creates /home/vagrant (ONLY for ansible purposes)
       file:
         state: directory 
         path: /home/vagrant/
@@ -140,7 +140,7 @@
     - block:
       - name: HEAD - Create {{ sharedpath }} directory to share
         file:
-          path: "{{ stuff.sharedpath }}"
+          path: "{{ var.sharedpath }}"
           state: directory
 
       - name: Mount virtual partition in {{ sharedpath }}
@@ -152,7 +152,7 @@
       when: sharedpath | trim != ''
 
     - block:
-      - name: "HEAD - NOT specified: create default /share"
+      - name: "HEAD - NOT specified: create default /share directory"
         file:
           path: /share
           state: directory    

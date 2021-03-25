@@ -2,40 +2,45 @@
   become: true
 
   tasks:
-    - name: Read vars of variables.yml file
+    - name: Install NFS
+      yum: 
+        name: nfs-utils.x86_64 
+        state: present
+
+    - name: Read variables of 'variables.yml' file
       include_vars:
         file: ../variables.yml
-        name: stuff
+        name: var
     
     - block:
-      - name: COMPUTES - Creates directory
+      - name: COMPUTES - Creates custom directory for share
         file:
-          path: "{{ stuff.sharedpath }}"
+          path: "{{ var.sharedpath }}"
           state: directory
 
-      - name: COMPUTES - Mount shared directory through NFS (custom share path)
+      - name: COMPUTES - Mount custom shared directory through NFS
         mount:
-          src: head:{{ stuff.sharedpath }}
-          path: "{{ stuff.sharedpath }}"
+          src: head:{{ var.sharedpath }}
+          path: "{{ var.sharedpath }}"
           opts: rw,sync,hard,intr,_netdev,retry=1
           state: mounted
           fstype: nfs
-      when: stuff.sharedpath | default('', true) | trim != ''
+      when: var.sharedpath | default('', true) | trim != ''
 
     - block:
-      - name: COMPUTES - Creates directory
+      - name: COMPUTES - Creates default /share directory
         file:
           path: /share
           state: directory
 
-      - name: COMPUTES - Mount shared directory through NFS (default share path)
+      - name: COMPUTES - Mount default shared directory through NFS
         mount:
           src: head:/share
           path: /share
           opts: rw,sync,hard,intr,_netdev,retry=1
           state: mounted
           fstype: nfs
-      when: stuff.sharedpath | default('', true) | trim == ''
+      when: var.sharedpath | default('', true) | trim == ''
 
     #- name: COMPUTES - Creates directory (/nfs/home)
     #  file:

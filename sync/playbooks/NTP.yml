@@ -1,0 +1,40 @@
+- hosts: all
+  become: true
+
+  tasks:
+    - block:
+      - name: HEAD - edit /etc/chrony.conf [1]
+        replace: 
+          path: /etc/chrony.conf
+          regexp: '^pool.*$'
+          replace: 'server hora.rediris.es\nserver cuco.rediris.es'
+
+      - name: HEAD - edit /etc/chrony.conf [2]
+        replace: 
+          path: /etc/chrony.conf
+          regexp: '^#allow.*$'
+          replace: 'allow 10.10.1.0/24'
+
+      - name: HEAD - Permit port 123/UDP in firewall
+        firewalld:
+          port: 123/udp
+          permanent: yes
+          state: enabled
+  
+      - name: HEAD - Restart firewalld service to apply changes
+        systemd:
+          name: firewalld
+          state: restarted    
+      when: ansible_hostname == "head"
+
+    - name: COMPUTES - edit /etc/chrony.conf
+      replace: 
+        path: /etc/chrony.conf
+        regexp: '^pool.*$'
+        replace: 'server head'
+      when: ansible_hostname != "head"
+
+    - name: ALL - Restart chronyd service to apply changes
+      systemd:
+        name: chronyd
+        state: restarted 

@@ -23,5 +23,5 @@
         #  when: ansible_hostname != "head"
 
         #- debug: var=groups['computes']
-        #- debug: var=groups.computes
+        - debug: var=groups.computes
         #- debug: var=groups.all

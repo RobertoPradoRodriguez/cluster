@@ -2,28 +2,33 @@
   become: true
 
   tasks:
+    - name: Install NFS
+      yum: 
+        name: nfs-utils.x86_64 
+        state: present
+
     - name: HEAD - Enable and start NFS server
       systemd:
         name: nfs-server
         enabled: yes
         state: started
 
-    - name: Read vars of variables.yml file
+    - name: Read variables of 'variables.yml' file
       include_vars:
         file: ../variables.yml
-        name: stuff
+        name: var
 
     - name: HEAD - Edit /etc/exports (custom share path)
       lineinfile:
         path: /etc/exports
-        line: '{{ stuff.sharedpath }}    compute-*(rw,sync)'
-      when: stuff.sharedpath | default('', true) | trim != ''
+        line: '{{ var.sharedpath }}    compute-*(rw,sync)'
+      when: var.sharedpath | default('', true) | trim != ''
       
     - name: HEAD - Edit /etc/exports (default share path)
       lineinfile:
         path: /etc/exports
         line: '/share    compute-*(rw,sync)'
-      when: stuff.sharedpath | default('', true) | trim == ''
+      when: var.sharedpath | default('', true) | trim == ''
 
     - name: HEAD - Edit /etc/exports (users home)
       lineinfile:
@@ -55,6 +60,10 @@
         permanent: yes
         state: enabled
         zone: public
-
-    - name: HEAD - Reload firewall to apply changes
-      shell: "firewall-cmd --reload"
+    
+    - name: HEAD - Restart firewalld service to apply changes
+      systemd:
+        name: firewalld
+        state: restarted
+    #- name: HEAD - Reload firewall to apply changes
+    #  shell: "firewall-cmd --reload"
