@@ -147,5 +147,5 @@ SlurmdDebug=info
 #
 #
 # COMPUTE NODES
-NodeName=compute-[0-{{ LAST_NODE }}] RealMemory={{ TOTAL_MEM }} MemSpecLimit=512 CPUs={{ CORES }} Sockets=1 CoresPerSocket={{ CORES }} ThreadsPerCore=1 State=UNKNOWN
-PartitionName=normal Nodes=compute-[0-{{ LAST_NODE }}] Default=YES RootOnly=no MaxTime=INFINITE MaxMemPerNode={{ TOTAL_MEM|int - 512 }} MaxMemPerCPU={{ TOTAL_MEM|int - 512 }} DefMemPerCPU={{ ((TOTAL_MEM|int - 512) / (CORES|int))|int }} State=UP
+NodeName=compute-[0-{{ LAST_NODE }}] RealMemory={{ TOTAL_MEM }} MemSpecLimit={{ MEM_SPEC }} CPUs={{ CORES }} Sockets=1 CoresPerSocket={{ CORES }} ThreadsPerCore=1 State=UNKNOWN
+PartitionName=normal Nodes=compute-[0-{{ LAST_NODE }}] Default=YES RootOnly=no MaxTime=INFINITE MaxMemPerNode={{ TOTAL_MEM|int - MEM_SPEC }} MaxMemPerCPU={{ TOTAL_MEM|int - MEM_SPEC }} DefMemPerCPU={{ ((TOTAL_MEM|int - MEM_SPEC) / (CORES|int))|int }} State=UP

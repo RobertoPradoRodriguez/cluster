@@ -97,6 +97,14 @@ Vagrant.configure("2") do |config|
             ansible.limit = "all"
         end
 
+        ### Software (lmod, compilers and MPI) ###
+        head.vm.provision "software", type: "ansible_local", after: "RAID",
+        preserve_order: true do |ansible|
+            ansible.playbook = "playbooks/software.yml"
+            ansible.inventory_path = "/etc/ansible/hosts"
+            ansible.limit = "all"
+        end
+
         ### Slurm ###
         head.vm.provision "Slurm", type: "ansible_local", after: "RAID",
         preserve_order: true do |ansible|

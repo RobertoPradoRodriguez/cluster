@@ -12,10 +12,11 @@
         name: /root/ohpc-release-2-1.el8.x86_64.rpm
         state: present
         disable_gpg_check: yes
-
-    - name: Update YUM cache
-      yum:
         update_cache: yes
+
+    #- name: Update YUM cache
+    #  yum:
+    #    update_cache: yes
 
     - name: HEAD - Install Slurm server
       yum:
@@ -30,7 +31,8 @@
       when: ansible_hostname != "head"
 
     - name: HEAD - Creates slurmdbd.conf
-      shell: "cp /etc/slurm/slurmdbd.conf.example /etc/slurm/slurmdbd.conf"
+      shell: "if [ ! -f /etc/slurm/slurmdbd.conf ]; then \
+      cp /etc/slurm/slurmdbd.conf.example /etc/slurm/slurmdbd.conf; fi"
       when: ansible_hostname == "head"
 
     - name: Creates cgroup.conf (copy)
@@ -55,7 +57,15 @@
         LAST_NODE: "{{ var.variables.NUM_COMPUTE_NODES - 1 }}"
         TOTAL_MEM: "{{ MEM.stdout }}"
         CORES: "{{ var.variables.COMPUTE_NODE_CORES }}"
+        MEM_SPEC: 512
       when: ansible_hostname != "head"
+
+    - name: COMPUTES - Adjusting MEM_SPEC
+      set_fact:
+        MEM_SPEC: 256
+      when: 
+        - ansible_hostname != "head"
+        - TOTAL_MEM | int < 1025
 
     - name: COMPUTES - Fill slurm.conf template
       template:
