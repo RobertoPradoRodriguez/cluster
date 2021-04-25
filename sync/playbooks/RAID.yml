@@ -9,9 +9,9 @@
     
     - name: Set variables LEVEL and DISKS
       set_fact:
-        level: "{{ var.variables.RAID_LEVEL | default ('', true) }}"
-        disks: "{{ var.variables.DISKS_HEAD | default ('', true) }}"
-        sharedpath: "{{ var.sharedpath | default ('', true) }}"
+        LEVEL: "{{ var.variables.RAID_LEVEL | default ('', true) }}"
+        DISKS: "{{ var.variables.DISKS_HEAD | default ('', true) }}"
+        SHAREDPATH: "{{ var.sharedpath | default ('', true) }}"
 
     - name: Install mdadm
       yum: 
@@ -23,7 +23,7 @@
       shell: "if [ ! -b /dev/md0 ]; then \
       yes | mdadm --create --verbose /dev/md0 --level=1 \
       --raid-devices=2 `ls /dev/sd[b-c]`; fi"
-      when: (disks < "3") or (disks | trim == '')
+      when: (DISKS < "3") or (DISKS | trim == '')
     
     # 3 disks
     - name: "3 DISKS: Create RAID 1"
@@ -31,17 +31,17 @@
       yes | mdadm --create --verbose /dev/md0 --level=1 \
       --raid-devices=3 `ls /dev/sd[b-d]`; fi"
       when:
-        - disks == "3"
-        - (level | trim == '') or ((level != "5") and (level != "10")) 
+        - DISKS == "3"
+        - (LEVEL | trim == '') or ((LEVEL != "5") and (LEVEL != "10")) 
 
-    - name: "3 DISKS: Create RAID 5 or 10. Chosen: RAID {{ level }}"
+    - name: "3 DISKS: Create RAID 5 or 10. Chosen: RAID {{ LEVEL }}"
       shell: "if [ ! -b /dev/md0 ]; then \
-      yes | mdadm --create --verbose /dev/md0 --level={{ level }} \
+      yes | mdadm --create --verbose /dev/md0 --level={{ LEVEL }} \
       --raid-devices=3 `ls /dev/sd[b-d]`; fi"
       when: 
-        - disks == "3"
-        - level | trim != ''
-        - (level == "5") or (level == "10") 
+        - DISKS == "3"
+        - LEVEL | trim != ''
+        - (LEVEL == "5") or (LEVEL == "10") 
 
     # 4 or more disks
     - name: " > 3 DISKS: Create RAID 1"
@@ -49,17 +49,17 @@
       yes | mdadm --create --verbose /dev/md0 --level=1 \
       --raid-devices={{ disks }} `ls /dev/sd[b-z]`; fi"
       when:
-        - disks > "3"
-        - (level | trim == '') or ((level != "5") and (level != "6") and (level != "10")) 
+        - DISKS > "3"
+        - (LEVEL | trim == '') or ((LEVEL != "5") and (LEVEL != "6") and (LEVEL != "10")) 
 
-    - name: " > 3 DISKS: Create RAID 5, 6 or 10 + SPARE DISK. Chosen: RAID {{ level }}"
+    - name: " > 3 DISKS: Create RAID 5, 6 or 10 + SPARE DISK. Chosen: RAID {{ LEVEL }}"
       shell: "if [ ! -b /dev/md0 ]; then \
-      yes | mdadm --create --verbose /dev/md0 --level={{ level }} \
+      yes | mdadm --create --verbose /dev/md0 --level={{ LEVEL }} \
       --raid-devices={{ var.variables.DISKS_HEAD - 1 }} `ls /dev/sd[c-z]` --spare-devices=1 /dev/sdb; fi"
       when:
-        - disks > "3"
-        - level | trim != ''
-        - (level == "5") or (level == "6") or (level == "10")
+        - DISKS > "3"
+        - LEVEL | trim != ''
+        - (LEVEL == "5") or (LEVEL == "6") or (LEVEL == "10")
 
     - name: Creates /etc/mdadm.conf for save RAID config
       shell: mdadm --detail --scan > /etc/mdadm.conf
@@ -138,18 +138,18 @@
         dev: /dev/mapper/vg_raid-lv_share
 
     - block:
-      - name: HEAD - Create {{ sharedpath }} directory to share
+      - name: HEAD - Create {{ SHAREDPATH }} directory to share
         file:
           path: "{{ var.sharedpath }}"
           state: directory
 
-      - name: Mount virtual partition in {{ sharedpath }}
+      - name: Mount virtual partition in {{ SHAREDPATH }}
         mount:
           src: /dev/mapper/vg_raid-lv_share
-          path: "{{ sharedpath }}"
+          path: "{{ SHAREDPATH }}"
           fstype: xfs
           state: mounted 
-      when: sharedpath | trim != ''
+      when: SHAREDPATH | trim != ''
 
     - block:
       - name: "HEAD - NOT specified: create default /share directory"
@@ -163,4 +163,4 @@
           path: /share
           fstype: xfs
           state: mounted
-      when: sharedpath | trim == ''
+      when: SHAREDPATH | trim == ''

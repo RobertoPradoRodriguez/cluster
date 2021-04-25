@@ -1,0 +1,59 @@
+- hosts: all
+  become: true
+
+  tasks:
+    - block:
+      - name: HEAD - Clone prometheus role (server)
+        git:
+          repo: https://github.com/cloudalchemy/ansible-prometheus.git
+          dest: /etc/ansible/roles/prometheus
+    
+      - name: HEAD - Clone prometheus role (clients)
+        git:
+          repo: https://github.com/cloudalchemy/ansible-node-exporter.git
+          dest: /etc/ansible/roles/node-exporter
+
+      - name: HEAD - Execute role as a task (to maintain order)
+        include_role:
+          name: prometheus
+
+      - name: HEAD - Create file for TARGETS (compute nodes)
+        lineinfile:
+          path: /etc/prometheus/file_sd/node.yml
+          line: "- targets:"
+          create: yes
+          state: present
+
+      - name: HEAD - Add computes nodes as TARGETS
+        lineinfile:
+          path: /etc/prometheus/file_sd/node.yml
+          line: "  - {{ item }}:9100"
+        loop: "{{ groups.computes }}"
+
+      - name: HEAD - Permit port 9090/TCP in firewall
+        firewalld:
+          port: 9090/tcp
+          permanent: yes
+          state: enabled
+      when: ansible_hostname == "head"
+  
+    - block:
+      - name: COMPUTES - Execute role as a task (to maintain order)
+        include_role:
+          name: node-exporter
+
+      - name: COMPUTES - Permit port 9100/TCP in firewall
+        firewalld:
+          port: 9100/tcp
+          permanent: yes
+          state: enabled
+      when: ansible_hostname != "head"
+
+    - name: Restart firewalld service to apply changes
+      systemd:
+        name: firewalld
+        state: restarted
+
+      
+        
+        

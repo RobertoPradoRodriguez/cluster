@@ -8,6 +8,10 @@
 #SBATCH -n 1
 #SBATCH -c 1
 
+module purge
+module load gnu9
+module load mpich
+
 mpicc hello-mpi.c -o hello-mpi -Wall -Wextra
 #mpirun -np 1 hello-mpi
-srun ./hello-mpi
+srun --mpi=pmi2 ./hello-mpi

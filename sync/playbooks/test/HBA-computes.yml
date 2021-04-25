@@ -1,0 +1,47 @@
+- hosts: computes
+  become: true
+
+  #environment:
+  #  HOME: "/vagranthome"
+  #  ANSIBLE_PERSISTENT_CONTROL_PATH_DIR: "/tmp/.ansible/cp"
+  #  ANSIBLE_SSH_CONTROL_PATH_DIR: "/tmp/.ansible/cp_ssh"
+
+  tasks:
+    #- shell: "export ANSIBLE_SSH_CONTROL_PATH_DIR=/tmp/.ansible/cp_ssh"
+    - name: COMPUTES - Copy ssh key from head to computes
+      shell: "ssh-keyscan head > /etc/ssh/ssh_known_hosts"
+
+    - name: COMPUTES - edit /etc/ssh/sshd_config [1]
+      replace: 
+        path: /etc/ssh/sshd_config
+        regexp: '^#HostbasedAuthentication.*$'
+        replace: 'HostbasedAuthentication yes'
+
+    - name: COMPUTES - edit /etc/ssh/sshd_config [2]
+      replace: 
+        path: /etc/ssh/sshd_config
+        regexp: '^#IgnoreRhosts.*$'
+        replace: 'IgnoreRhosts no'
+
+    - name: COMPUTES - edit /etc/ssh/sshd_config [3]
+      replace: 
+        path: /etc/ssh/sshd_config
+        regexp: '^#UseDNS.*$'
+        replace: 'UseDNS yes'
+
+    - name: COMPUTES - edit /etc/ssh/sshd_config [4]
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        line: 'HostbasedAcceptedKeyTypes rsa-sha2-512,rsa-sha2-256,ssh-rsa'
+        insertafter: '^HostbasedAuthentication.*'
+
+    - name: COMPUTES - Create shosts.equiv for access control
+      shell: "if [ ! -f /etc/ssh/shosts.equiv ]; then echo 'head' > /etc/ssh/shosts.equiv; fi"
+
+    - name: COMPUTES - Create /root/.shosts (root login)
+      shell: "if [ ! -f /root/.shosts ]; then echo -e 'head\troot' > /root/.shosts; fi"
+
+    - name: COMPUTES - Restart SSHD service to apply changes
+      systemd:
+        name: sshd
+        state: restarted

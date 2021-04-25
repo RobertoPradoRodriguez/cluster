@@ -1,0 +1,30 @@
+- hosts: head
+  become: true
+
+  tasks:
+    - name: HEAD - Clone grafana
+      git:
+        repo: https://github.com/cloudalchemy/ansible-grafana.git
+        dest: /etc/ansible/roles/grafana
+
+    - name: HEAD - Execute role as a task (to maintain order)
+      include_role:
+        name: grafana
+      
+    - name: HEAD - Permit port 3000/TCP in firewall
+      firewalld:
+        port: 3000/tcp
+        permanent: yes
+        state: enabled  
+        
+  vars:
+    grafana_security:
+      admin_user: root
+      admin_password: toor
+
+    grafana_datasources:
+      name: prometheus
+      type: prometheus
+      access: proxy
+      url: 'http://localhost:9090'
+      basicAuth: false

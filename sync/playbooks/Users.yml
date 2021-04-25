@@ -1,0 +1,30 @@
+- hosts: all
+  become: true
+  
+  tasks:
+    - name: Read variables of 'variables.yml' file
+      include_vars:
+        file: ../variables.yml
+        name: var
+
+    - name: Encrypt default user's password 
+      command: "openssl passwd -crypt {{ var.variables.DEFAULT_USER_PASSWORD }}"
+      register: crypted_password
+
+    - name: HEAD - Add several users
+      user: 
+        name: "{{ item }}"
+        state: present
+        password: "{{ crypted_password.stdout }}"
+      loop: "{{ var.users }}"
+      when: ansible_hostname == "head"
+
+    - name: COMPUTES - Add several users (without /home)
+      user: 
+        name: "{{ item }}"
+        state: present
+        create_home: no
+        home: "/nfs/home/{{ item }}"
+        password: "{{ crypted_password.stdout }}"
+      loop: "{{ var.users }}"
+      when: ansible_hostname != "head"

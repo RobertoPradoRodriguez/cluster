@@ -22,7 +22,7 @@
         mount:
           src: head:{{ var.sharedpath }}
           path: "{{ var.sharedpath }}"
-          opts: rw,sync,hard,intr,_netdev,retry=1
+          opts: rw,sync #,hard,intr,_netdev,retry=1
           state: mounted
           fstype: nfs
       when: var.sharedpath | default('', true) | trim != ''
@@ -37,24 +37,21 @@
         mount:
           src: head:/share
           path: /share
-          opts: rw,sync,hard,intr,_netdev,retry=1
+          opts: rw,sync
           state: mounted
           fstype: nfs
       when: var.sharedpath | default('', true) | trim == ''
 
-    #- name: COMPUTES - Creates directory (/nfs/home)
-    #  file:
-    #    path: /nfs/home
-    #    state: directory
-
+    ### IMPORTANT: Mounting head:/home in /home give us an interface ERROR!
+    ### To fix, now we mounting in /nfs/home
     - name: COMPUTES - Mount home directory through NFS (users home)
       mount:
         src: head:/home
-        path: /home
-        opts: rw,sync,hard,intr,_netdev,retry=1
+        path: /nfs/home
+        opts: rw,sync
         state: mounted
         fstype: nfs
-      ignore_errors: yes
+      #ignore_errors: yes
 
     - name: Creates an entry to mount by NFS AFTER NETWORK is UP
       cron:

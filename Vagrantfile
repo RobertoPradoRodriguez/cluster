@@ -29,6 +29,8 @@ Vagrant.configure("2") do |config|
     config.vm.define "head", primary: true do |head|
         head.vm.hostname = "head"
         head.vm.network :private_network, ip: HEAD_NODE_IP
+        head.vm.network "forwarded_port", guest: 9090, host: 9090, host_ip: "127.0.0.1"
+        head.vm.network "forwarded_port", guest: 3000, host: 3000, host_ip: "127.0.0.1"
 
         if DISKS_HEAD < 2 then DISKS_HEAD = 2 end
         #puts DISKS_HEAD
@@ -67,27 +69,18 @@ Vagrant.configure("2") do |config|
         # Initial configs in ALL nodes
         head.vm.provision "Init", type: "ansible_local", before: "RAID" \
         do |ansible|
-            ansible.playbook = "playbooks/init.yml"
+            ansible.playbook = "playbooks/Init.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
 
-        ##### SSH HBA using Ansible #####
-        # Changes in HEAD
-        head.vm.provision "HBA-head", type: "ansible_local", before: "RAID",
+        ### SSH HBA  ###
+        head.vm.provision "HostBasedAuthSSH", type: "ansible_local", before: "RAID",
         preserve_order: true do |ansible|
-            ansible.playbook = "playbooks/HBA-head.yml"
+            ansible.playbook = "playbooks/HostBasedAuthSSH.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
-        # Changes in COMPUTES
-        head.vm.provision "HBA-computes", type: "ansible_local", before: "RAID", 
-        preserve_order: true do |ansible|
-           ansible.playbook = "playbooks/HBA-computes.yml"
-            ansible.inventory_path = "/etc/ansible/hosts"
-            ansible.limit = "all"
-        end
-        #################################
 
         # Create RAID for /home and /share
         head.vm.provision "RAID", type: "ansible_local" \
@@ -97,10 +90,18 @@ Vagrant.configure("2") do |config|
             ansible.limit = "all"
         end
 
+        ### Promethues ###
+        head.vm.provision "prometheus", type: "ansible_local", after: "RAID",
+        preserve_order: true do |ansible|
+            ansible.playbook = "playbooks/Prometheus.yml"
+            ansible.inventory_path = "/etc/ansible/hosts"
+            ansible.limit = "all"
+        end
+
         ### Software (lmod, compilers and MPI) ###
         head.vm.provision "software", type: "ansible_local", after: "RAID",
         preserve_order: true do |ansible|
-            ansible.playbook = "playbooks/software.yml"
+            ansible.playbook = "playbooks/Software.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
@@ -108,7 +109,7 @@ Vagrant.configure("2") do |config|
         ### Slurm ###
         head.vm.provision "Slurm", type: "ansible_local", after: "RAID",
         preserve_order: true do |ansible|
-            ansible.playbook = "playbooks/slurm.yml"
+            ansible.playbook = "playbooks/Slurm.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
@@ -124,7 +125,7 @@ Vagrant.configure("2") do |config|
         #### Directories /scratch in COMPUTES
         head.vm.provision "Scratch", type: "ansible_local", after: "RAID",
         preserve_order: true do |ansible|
-            ansible.playbook = "playbooks/scratch.yml"
+            ansible.playbook = "playbooks/Scratch.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
@@ -132,7 +133,7 @@ Vagrant.configure("2") do |config|
         ### Create users in all nodes
         head.vm.provision "Users", type: "ansible_local", after: "RAID" \
         do |ansible|
-            ansible.playbook = "playbooks/users.yml"
+            ansible.playbook = "playbooks/Users.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end

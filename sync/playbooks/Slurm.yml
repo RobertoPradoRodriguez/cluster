@@ -1,0 +1,137 @@
+- hosts: all
+  become: true
+  
+  tasks:
+    - name: Download OpenHPC repository
+      get_url:
+        url: http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm
+        dest: /root
+
+    - name: Install package OpenHPC
+      yum:
+        name: /root/ohpc-release-2-1.el8.x86_64.rpm
+        state: present
+        disable_gpg_check: yes
+        update_cache: yes
+
+    - name: HEAD - Install Slurm server
+      yum:
+        name: ohpc-slurm-server.x86_64
+        state: present
+      when: ansible_hostname == "head"
+
+    - name: COMPUTES - Install Slurm client
+      yum:
+        name: ohpc-slurm-client.x86_64
+        state: present
+      when: ansible_hostname != "head"
+
+    - name: HEAD - Creates slurmdbd.conf
+      shell: "if [ ! -f /etc/slurm/slurmdbd.conf ]; then \
+      cp /etc/slurm/slurmdbd.conf.example /etc/slurm/slurmdbd.conf; fi"
+      when: ansible_hostname == "head"
+
+    - name: Creates cgroup.conf (copy)
+      copy: 
+        src: /vagrant/slurm/cgroup.conf
+        dest: /etc/slurm
+      #with_fileglob:
+      #  - "/vagrant/slurm/cgroup.conf"
+
+    - name: Read variables of 'variables.yml' file
+      include_vars:
+        file: ../variables.yml
+        name: var
+
+    - name: COMPUTES - Obtain real memory
+      shell: 'free -m | grep "Mem:" | cut -d " " -f 13'
+      register: MEM
+      when: ansible_hostname != "head"
+
+    - name: COMPUTES - Set variables for fill slurm.conf
+      set_fact:
+        LAST_NODE: "{{ var.variables.NUM_COMPUTE_NODES - 1 }}"
+        TOTAL_MEM: "{{ MEM.stdout }}"
+        CORES: "{{ var.variables.COMPUTE_NODE_CORES }}"
+        MEM_SPEC: 512
+      when: ansible_hostname != "head"
+
+    - name: COMPUTES - Adjusting MEM_SPEC
+      set_fact:
+        MEM_SPEC: 256
+      when: 
+        - ansible_hostname != "head"
+        - TOTAL_MEM | int < 1025
+
+    - name: COMPUTES - Fill slurm.conf template
+      template:
+        src: /vagrant/slurm/slurm.conf.j2
+        dest: /etc/slurm/slurm.conf
+      when: ansible_hostname != "head"
+
+    - name: HEAD - Obtain slurm.conf from compute-0
+      shell: 'scp -o "StrictHostKeyChecking no" root@compute-0:/etc/slurm/slurm.conf /etc/slurm/'
+      when: ansible_hostname == "head"
+
+    #- name: Fetch slurm.conf
+    #  fetch:
+    #    src: /etc/slurm/slurm.conf
+    #    dest: /etc/slurm/
+    #    flat: yes
+    #  when: ansible_hostname == "compute-0"
+
+    - name: HEAD - Open port in firewall
+      firewalld:
+        port: 6817/tcp
+        permanent: yes
+        state: enabled
+      when: ansible_hostname == "head"
+
+    - name: COMPUTES - Open port in firewall
+      firewalld:
+        port: 6818/tcp
+        permanent: yes
+        state: enabled
+      when: ansible_hostname != "head"
+
+    - name: Restart firewalld service to apply changes
+      systemd:
+        name: firewalld
+        state: restarted   
+
+    #- name: Copy munge key
+    #  copy: 
+    #    src: /etc/munge/munge.key
+    #    dest: /etc/munge
+
+    - name: HEAD - Copy Munge key to all computes
+      shell: 'scp -o "StrictHostKeyChecking no" /etc/munge/munge.key root@{{ item }}:/etc/munge/munge.key'
+      loop: "{{ groups.computes }}"
+      when: ansible_hostname == "head"
+
+    - name: Enable and start Munge service
+      systemd:
+        name: munge
+        enabled: yes
+        state: started
+
+    - name: HEAD - Enable and start Slurmdbd
+      systemd:
+        name: slurmdbd
+        enabled: yes
+        state: started
+      when: ansible_hostname == "head"
+
+    - name: HEAD - Enable and start Slurmctld
+      systemd:
+        name: slurmctld
+        enabled: yes
+        state: started
+      when: ansible_hostname == "head"
+
+    - name: COMPUTES - Enable and start Slurmd
+      systemd:
+        name: slurmd
+        enabled: yes
+        state: started
+      when: ansible_hostname != "head"
