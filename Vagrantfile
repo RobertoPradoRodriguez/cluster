@@ -1,9 +1,9 @@
 # -*- mode: ruby -*-
 HEAD_NODE_IP 			= "10.10.1.2"
-HEAD_NODE_MEM 			= 2048
+HEAD_NODE_MEM 			= 1024
 HEAD_NODE_CORES 		= 1
 NUM_COMPUTE_NODES 		= 1
-COMPUTE_NODE_MEM 		= 1024
+COMPUTE_NODE_MEM 		= 512
 COMPUTE_NODE_CORES 		= 1
 DISKS_HEAD         		= 2
 DISKS_HEAD_MEM_GB  		= 1
@@ -31,6 +31,9 @@ Vagrant.configure("2") do |config|
         head.vm.network :private_network, ip: HEAD_NODE_IP
         head.vm.network "forwarded_port", guest: 9090, host: 9090, host_ip: "127.0.0.1"
         head.vm.network "forwarded_port", guest: 3000, host: 3000, host_ip: "127.0.0.1"
+
+        head.ssh.forward_agent = true
+ 		head.ssh.forward_x11 = true
 
         if DISKS_HEAD < 2 then DISKS_HEAD = 2 end
         #puts DISKS_HEAD
@@ -90,7 +93,15 @@ Vagrant.configure("2") do |config|
             ansible.limit = "all"
         end
 
-        ### Promethues ###
+        ### Grafana ###
+        head.vm.provision "grafana", type: "ansible_local", after: "RAID",
+        preserve_order: true do |ansible|
+            ansible.playbook = "playbooks/Grafana.yml"
+            ansible.inventory_path = "/etc/ansible/hosts"
+            ansible.limit = "all"
+        end
+
+        ### Prometheus ###
         head.vm.provision "prometheus", type: "ansible_local", after: "RAID",
         preserve_order: true do |ansible|
             ansible.playbook = "playbooks/Prometheus.yml"

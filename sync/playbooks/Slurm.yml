@@ -99,6 +99,15 @@
         name: firewalld
         state: restarted   
 
+    - name: Change permissions in /etc/slurm
+      file:
+        state: file
+        path: /etc/slurm/slurmdbd.conf
+        owner: slurm
+        group: slurm
+        #recurse: yes
+      when: ansible_hostname == "head"
+
     #- name: Copy munge key
     #  copy: 
     #    src: /etc/munge/munge.key

@@ -20,6 +20,12 @@
           path: /etc/ssh/ssh_config
           line: '    EnableSSHKeysign yes'
           insertafter: '.*HostbasedAuthentication.*'
+      
+      - name: HEAD - edit /etc/ssh/sshD_config
+        replace: 
+          path: /etc/ssh/sshd_config
+          regexp: '^PasswordAuthentication.*$'
+          replace: 'PasswordAuthentication yes'
       when: ansible_hostname == "head"
     
     - block:
@@ -54,16 +60,11 @@
         shell: "if [ ! -f /etc/ssh/shosts.equiv ]; then echo 'head' > /etc/ssh/shosts.equiv; fi"
 
       - name: COMPUTES - Create /root/.shosts (root login)
-        shell: "if [ ! -f /root/.shosts ]; then echo -e 'head\troot' > /root/.shosts; fi"
-
-      - name: COMPUTES - Restart SSHD service to apply changes
-        systemd:
-          name: sshd
-          state: restarted
+        shell: "if [ ! -f /root/.shosts ]; then echo -e 'head\troot' > /root/.shosts; fi"     
       when: ansible_hostname != "head"
-
-      - name: HEAD - edit /etc/ssh/sshD_config
-        replace: 
-          path: /etc/ssh/sshd_config
-          regexp: '^PasswordAuthentication.*$'
-          replace: 'PasswordAuthentication yes'
+      
+    - name: Restart SSHD service to apply changes
+      systemd:
+        name: sshd
+        state: restarted
+      

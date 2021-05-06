@@ -20,11 +20,20 @@
         - mpich-ucx-gnu9-ohpc
         - mvapich2-gnu9-ohpc
 
+    #dnf --enablerepo=powertools install lua-filesystem
+    #dnf --enablerepo=powertools install lua-posix
+    #yum -y install lmod-defaults-gnu9-openmpi4-ohpc
+
     - name: Install Git
       yum: 
         name: git 
         state: present
 
-    #dnf --enablerepo=powertools install lua-filesystem
-    #dnf --enablerepo=powertools install lua-posix
-    #yum -y install lmod-defaults-gnu9-openmpi4-ohpc
+    - name: HEAD - Install sview for Slurm
+      yum:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - xorg-x11-xauth.x86_64
+        - slurm-sview-ohpc
+      when: ansible_hostname == "head"
