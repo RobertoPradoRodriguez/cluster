@@ -11,7 +11,7 @@
       set_fact:
         LEVEL: "{{ var.variables.RAID_LEVEL | default ('', true) }}"
         DISKS: "{{ var.variables.DISKS_HEAD | default ('', true) }}"
-        SHAREDPATH: "{{ var.sharedpath | default ('', true) }}"
+        SHAREDPATH: "{{ var.variables.SHARED_PATH | default ('', true) }}"
 
     - name: Install mdadm
       yum: 
@@ -55,7 +55,8 @@
     - name: " > 3 DISKS: Create RAID 5, 6 or 10 + SPARE DISK. Chosen: RAID {{ LEVEL }}"
       shell: "if [ ! -b /dev/md0 ]; then \
       yes | mdadm --create --verbose /dev/md0 --level={{ LEVEL }} \
-      --raid-devices={{ var.variables.DISKS_HEAD - 1 }} `ls /dev/sd[c-z]` --spare-devices=1 /dev/sdb; fi"
+      --raid-devices={{ var.variables.DISKS_HEAD - 1 }} \
+      `ls /dev/sd[c-z]` --spare-devices=1 /dev/sdb; fi"
       when:
         - DISKS > "3"
         - LEVEL | trim != ''
@@ -140,7 +141,7 @@
     - block:
       - name: HEAD - Create {{ SHAREDPATH }} directory to share
         file:
-          path: "{{ var.sharedpath }}"
+          path: "{{ var.variables.SHARED_PATH }}"
           state: directory
 
       - name: Mount virtual partition in {{ SHAREDPATH }}

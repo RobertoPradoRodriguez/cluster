@@ -1,14 +1,14 @@
 # -*- mode: ruby -*-
-HEAD_NODE_IP 			= "10.10.1.2"
-HEAD_NODE_MEM 			= 1024
-HEAD_NODE_CORES 		= 1
-NUM_COMPUTE_NODES 		= 1
-COMPUTE_NODE_MEM 		= 512
-COMPUTE_NODE_CORES 		= 1
-DISKS_HEAD         		= 2
-DISKS_HEAD_MEM_GB  		= 1
-DISKS_COMPUTES			= 2
-DISKS_COMPUTES_MEM_GB 	= 1
+HEAD_NODE_IP            = "10.10.1.2"
+HEAD_NODE_MEM           = 1024
+HEAD_NODE_CORES         = 1
+NUM_COMPUTE_NODES       = 1
+COMPUTE_NODE_MEM        = 512
+COMPUTE_NODE_CORES      = 1
+DISKS_HEAD              = 2
+DISKS_HEAD_MEM_GB       = 1
+DISKS_COMPUTES          = 2
+DISKS_COMPUTES_MEM_GB   = 1
 
 require 'ipaddr'
 CLUSTER_IP_ADDR = IPAddr.new HEAD_NODE_IP
@@ -33,13 +33,13 @@ Vagrant.configure("2") do |config|
         head.vm.network "forwarded_port", guest: 3000, host: 3000, host_ip: "127.0.0.1"
 
         head.ssh.forward_agent = true
- 		head.ssh.forward_x11 = true
+        head.ssh.forward_x11 = true
 
         if DISKS_HEAD < 2 then DISKS_HEAD = 2 end
         #puts DISKS_HEAD
 
         #(1..DISKS_HEAD).each do |i|
-        #	head.vm.disk :disk, name: "disk#{i}", size: DISKS_HEAD_MEM_GB * 1024 * 1024 * 1024
+        #   head.vm.disk :disk, name: "disk#{i}", size: DISKS_HEAD_MEM_GB * 1024 * 1024 * 1024
         #end
         #head.vm.disk :disk, name: "disk1", size: "1GB"
 
@@ -47,13 +47,13 @@ Vagrant.configure("2") do |config|
             vb.cpus = HEAD_NODE_CORES
             vb.memory = HEAD_NODE_MEM
             unless File.exist?(".vagrant/machines/head/virtualbox/private_key")
-            	vb.customize ["storagectl", :id, "--name", "SATA Controller", "--add", "sata"]
+                vb.customize ["storagectl", :id, "--name", "SATA Controller", "--add", "sata"]
             end
             (1..DISKS_HEAD).each do |j|
-            	filename = "./disks/head/disk#{j}.vmdk"
-            	unless File.exist?(filename)
-                	vb.customize ["createmedium", "disk", "--filename", filename, "--size", DISKS_HEAD_MEM_GB * 1024]
-                 	vb.customize ["storageattach", :id, "--storagectl", "SATA Controller", "--port", j + 1, "--device", 0, "--type", "hdd", "--medium", filename]
+                filename = "./disks/head/disk#{j}.vmdk"
+                unless File.exist?(filename)
+                    vb.customize ["createmedium", "disk", "--filename", filename, "--size", DISKS_HEAD_MEM_GB * 1024]
+                    vb.customize ["storageattach", :id, "--storagectl", "SATA Controller", "--port", j + 1, "--device", 0, "--type", "hdd", "--medium", filename]
                 end
             end
         end
@@ -125,7 +125,7 @@ Vagrant.configure("2") do |config|
             ansible.limit = "all"
         end
 
-       	### NTP ###
+        ### NTP ###
         head.vm.provision "NTP", type: "ansible_local", after: "RAID",
         preserve_order: true do |ansible|
             ansible.playbook = "playbooks/NTP.yml"
@@ -179,15 +179,15 @@ Vagrant.configure("2") do |config|
                 vb.cpus = COMPUTE_NODE_CORES
                 vb.memory = COMPUTE_NODE_MEM
                 unless File.exist?(".vagrant/machines/compute-#{i - 1}/virtualbox/private_key")
-            		vb.customize ["storagectl", :id, "--name", "SATA Controller", "--add", "sata"]
-            	end
-            	(1..DISKS_COMPUTES).each do |j|
-            		filename = "./disks/compute-#{i - 1}/disk#{j}.vmdk"
-            		unless File.exist?(filename)
-                  		vb.customize ["createmedium", "disk", "--filename", filename, "--size", DISKS_COMPUTES_MEM_GB * 1024]
-                  		vb.customize ["storageattach", :id, "--storagectl", "SATA Controller", "--port", j + 1, "--device", 0, "--type", "hdd", "--medium", filename]
-                	end
-            	end
+                    vb.customize ["storagectl", :id, "--name", "SATA Controller", "--add", "sata"]
+                end
+                (1..DISKS_COMPUTES).each do |j|
+                    filename = "./disks/compute-#{i - 1}/disk#{j}.vmdk"
+                    unless File.exist?(filename)
+                        vb.customize ["createmedium", "disk", "--filename", filename, "--size", DISKS_COMPUTES_MEM_GB * 1024]
+                        vb.customize ["storageattach", :id, "--storagectl", "SATA Controller", "--port", j + 1, "--device", 0, "--type", "hdd", "--medium", filename]
+                    end
+                end
             end
             #compute.vm.provision "mock", type: "shell", path: "./provisioning/mock.sh"
         end

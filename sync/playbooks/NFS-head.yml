@@ -21,14 +21,14 @@
     - name: HEAD - Edit /etc/exports (custom share path)
       lineinfile:
         path: /etc/exports
-        line: '{{ var.sharedpath }}    compute-*(rw,sync)'
-      when: var.sharedpath | default('', true) | trim != ''
+        line: '{{ var.variables.SHARED_PATH }}    compute-*(rw,sync)'
+      when: var.variables.SHARED_PATH | default('', true) | trim != ''
       
     - name: HEAD - Edit /etc/exports (default share path)
       lineinfile:
         path: /etc/exports
         line: '/share    compute-*(rw,sync)'
-      when: var.sharedpath | default('', true) | trim == ''
+      when: var.variables.SHARED_PATH | default('', true) | trim == ''
 
     - name: HEAD - Edit /etc/exports (users home)
       lineinfile:
@@ -65,5 +65,3 @@
       systemd:
         name: firewalld
         state: restarted
-    #- name: HEAD - Reload firewall to apply changes
-    #  shell: "firewall-cmd --reload"

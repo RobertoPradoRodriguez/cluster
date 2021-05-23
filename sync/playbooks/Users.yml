@@ -23,7 +23,7 @@
       user: 
         name: "{{ item }}"
         state: present
-        create_home: no
+        #create_home: no
         home: "/nfs/home/{{ item }}"
         password: "{{ crypted_password.stdout }}"
       loop: "{{ var.users }}"

@@ -15,17 +15,17 @@
     - block:
       - name: COMPUTES - Creates custom directory for share
         file:
-          path: "{{ var.sharedpath }}"
+          path: "{{ var.variables.SHARED_PATH }}"
           state: directory
 
       - name: COMPUTES - Mount custom shared directory through NFS
         mount:
-          src: head:{{ var.sharedpath }}
-          path: "{{ var.sharedpath }}"
+          src: head:{{ var.variables.SHARED_PATH }}
+          path: "{{ var.variables.SHARED_PATH }}"
           opts: rw,sync #,hard,intr,_netdev,retry=1
           state: mounted
           fstype: nfs
-      when: var.sharedpath | default('', true) | trim != ''
+      when: var.variables.SHARED_PATH | default('', true) | trim != ''
 
     - block:
       - name: COMPUTES - Creates default /share directory
@@ -40,7 +40,7 @@
           opts: rw,sync
           state: mounted
           fstype: nfs
-      when: var.sharedpath | default('', true) | trim == ''
+      when: var.variables.SHARED_PATH | default('', true) | trim == ''
 
     ### IMPORTANT: Mounting head:/home in /home give us an interface ERROR!
     ### To fix, now we mounting in /nfs/home

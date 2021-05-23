@@ -57,10 +57,12 @@
           insertafter: '^HostbasedAuthentication.*'
 
       - name: COMPUTES - Create shosts.equiv for access control
-        shell: "if [ ! -f /etc/ssh/shosts.equiv ]; then echo 'head' > /etc/ssh/shosts.equiv; fi"
+        shell: "if [ ! -f /etc/ssh/shosts.equiv ]; \
+        then echo 'head' > /etc/ssh/shosts.equiv; fi"
 
       - name: COMPUTES - Create /root/.shosts (root login)
-        shell: "if [ ! -f /root/.shosts ]; then echo -e 'head\troot' > /root/.shosts; fi"     
+        shell: "if [ ! -f /root/.shosts ]; \
+        then echo -e 'head\troot' > /root/.shosts; fi"     
       when: ansible_hostname != "head"
       
     - name: Restart SSHD service to apply changes

@@ -1,5 +1,4 @@
 # Variables for Vagrantfile
-
 variables:
   HEAD_NODE_IP: 10.10.1.2
   HEAD_NODE_MEM: 1024
@@ -8,15 +7,15 @@ variables:
   COMPUTE_NODE_MEM: 512
   COMPUTE_NODE_CORES: 1
   DISKS_HEAD: 2
-  DISKS_HEAD_MEM_GB: 1 
+  DISKS_HEAD_MEM_GB: 1
   RAID_LEVEL: 5
   DISKS_COMPUTES: 2
   DISKS_COMPUTES_MEM_GB: 1
   ROOT_PASSWORD: toor
   DEFAULT_USER_PASSWORD: user
-  
+  SHARED_PATH: /share
+
+# Users as a list
 users:
   - Maria
   - Pedro
-
-sharedpath: /share
