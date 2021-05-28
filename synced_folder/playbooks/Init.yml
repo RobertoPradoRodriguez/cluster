@@ -21,11 +21,16 @@
         update_password: always 
         password: "{{ crypted_password.stdout }}"
 
+    - name: Install spanish locale
+      dnf:
+        name: glibc-langpack-es
+        state: present
+
     - name: Set timezone
       command: timedatectl set-timezone Europe/Madrid
 
-    - name: Set locale
-      command: localectl set-locale LANG=es_ES
+    #- name: Set locale
+    #  command: localectl set-locale LANG=es_ES
     
     - name: Set keymap
       command: localectl set-keymap es

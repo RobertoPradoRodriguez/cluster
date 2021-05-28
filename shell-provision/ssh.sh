@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Manage ssh keys from public-key access (used before configure HB Auth)
+# Manage ssh keys from public-key access (used for Ansible tasks)
 if [[ $HOSTNAME == "head" ]] 
 then
     if [ ! -f /vagrant/ssh-keys/id_rsa ] || [ ! -f /vagrant/ssh-keys/id_rsa.pub ]

@@ -15,3 +15,4 @@ module load mpich
 mpicc hello-mpi.c -o hello-mpi -Wall -Wextra
 #mpirun -np 1 hello-mpi
 srun --mpi=pmi2 ./hello-mpi
+srun --mpi=none hostname

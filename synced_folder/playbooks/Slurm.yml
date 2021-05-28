@@ -4,7 +4,7 @@
   tasks:
     - name: Download OpenHPC repository
       get_url:
-        url: http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm
+        url: 'http://repos.openhpc.community/OpenHPC/2/CentOS_8/x86_64/ohpc-release-2-1.el8.x86_64.rpm'
         dest: /root
 
     - name: Install package OpenHPC
@@ -26,10 +26,10 @@
         state: present
       when: ansible_hostname != "head"
 
-    - name: HEAD - Creates slurmdbd.conf
-      shell: "if [ ! -f /etc/slurm/slurmdbd.conf ]; then \
-      cp /etc/slurm/slurmdbd.conf.example /etc/slurm/slurmdbd.conf; fi"
-      when: ansible_hostname == "head"
+   # - name: HEAD - Creates slurmdbd.conf
+   #   shell: "if [ ! -f /etc/slurm/slurmdbd.conf ]; then \
+   #   cp /etc/slurm/slurmdbd.conf.example /etc/slurm/slurmdbd.conf; fi"
+   #   when: ansible_hostname == "head"
 
     - name: Creates cgroup.conf (copy)
       copy: 
@@ -43,30 +43,27 @@
         file: ../variables.yml
         name: var
 
-    - name: COMPUTES - Obtain real memory
-      shell: 'free -m | grep "Mem:" | cut -d " " -f 13'
-      register: MEM
-      when: ansible_hostname != "head"
+    - block:
+      - name: COMPUTES - Obtain real memory
+        shell: 'free -m | grep "Mem:" | cut -d " " -f 13'
+        register: MEM
 
-    - name: COMPUTES - Set variables for fill slurm.conf
-      set_fact:
-        LAST_NODE: "{{ var.variables.NUM_COMPUTE_NODES - 1 }}"
-        TOTAL_MEM: "{{ MEM.stdout }}"
-        CORES: "{{ var.variables.COMPUTE_NODE_CORES }}"
-        MEM_SPEC: 512
-      when: ansible_hostname != "head"
+      - name: COMPUTES - Set variables for fill slurm.conf
+        set_fact:
+          LAST_NODE: "{{ var.variables.NUM_COMPUTE_NODES - 1 }}"
+          TOTAL_MEM: "{{ MEM.stdout }}"
+          CORES: "{{ var.variables.COMPUTE_NODE_CORES }}"
+          MEM_SPEC: 512
 
-    - name: COMPUTES - Adjusting MEM_SPEC
-      set_fact:
-        MEM_SPEC: 256
-      when: 
-        - ansible_hostname != "head"
-        - TOTAL_MEM | int < 1025
+      - name: COMPUTES - Adjusting MEM_SPEC
+        set_fact:
+          MEM_SPEC: 256
+        when: TOTAL_MEM | int < 1025
 
-    - name: COMPUTES - Fill slurm.conf template
-      template:
-        src: /vagrant/slurm/slurm.conf.j2
-        dest: /etc/slurm/slurm.conf
+      - name: COMPUTES - Fill slurm.conf template
+        template:
+          src: /vagrant/slurm/slurm.conf.j2
+          dest: /etc/slurm/slurm.conf
       when: ansible_hostname != "head"
 
     - name: HEAD - Obtain slurm.conf from compute-0
@@ -99,14 +96,13 @@
         name: firewalld
         state: restarted   
 
-    - name: Change permissions in /etc/slurm
-      file:
-        state: file
-        path: /etc/slurm/slurmdbd.conf
-        owner: slurm
-        group: slurm
-        #recurse: yes
-      when: ansible_hostname == "head"
+  #  - name: Change permissions in /etc/slurm
+  #    file:
+  #      state: file
+  #      path: /etc/slurm/slurmdbd.conf
+  #      owner: slurm
+  #      group: slurm
+  #    when: ansible_hostname == "head"
 
     #- name: Copy munge key
     #  copy: 
@@ -124,12 +120,12 @@
         enabled: yes
         state: started
 
-    - name: HEAD - Enable and start Slurmdbd
-      systemd:
-        name: slurmdbd
-        enabled: yes
-        state: started
-      when: ansible_hostname == "head"
+  #  - name: HEAD - Enable and start Slurmdbd
+  #    systemd:
+  #      name: slurmdbd
+  #      enabled: yes
+  #      state: started
+  #    when: ansible_hostname == "head"
 
     - name: HEAD - Enable and start Slurmctld
       systemd:

@@ -4,12 +4,7 @@ import os
 import yaml
 from jinja2 import Template
 
-# Export env variable to allow dependency provisioners in Vagrant 
-#os.system(". ~/.bashrc")
-os.system("if [ $(grep -c VAGRANT_EXPERIMENTAL ~/.bashrc) -eq 0 ]; \
-	then echo VAGRANT_EXPERIMENTAL='dependency_provisioners' >> ~/.bashrc; fi")
-
-with open("sync/variables.yml") as variables:
+with open("synced_folder/variables.yml") as variables:
 	doc = yaml.safe_load(variables)
 
 with open("Vagrantfile-template") as VagrantTemplate:

@@ -16,7 +16,7 @@ CLUSTER_IP_ADDR = CLUSTER_IP_ADDR.succ
 
 Vagrant.configure("2") do |config|
     config.vm.box = "generic/centos8"
-    config.vm.synced_folder "sync", "/vagrant", type: "virtualbox", mount_options: ["dmode=775,fmode=777"]
+    config.vm.synced_folder "synced_folder", "/vagrant", type: "virtualbox", mount_options: ["dmode=775,fmode=777"]
 
     # Generate /etc/hosts (plugin)
     config.hostmanager.enabled = true
@@ -60,14 +60,14 @@ Vagrant.configure("2") do |config|
         ###   export VAGRANT_EXPERIMENTAL="dependency_provisioners,disks"   ###
         # Install ansible on the head node
         head.vm.provision "ansible-install", type: "shell", \
-        path: "./provisioning/ansible-install.sh" \
+        path: "./shell-provision/ansible-install.sh" \
         do |script|
             script.args = [NUM_COMPUTE_NODES]
         end
         
         # Generate ssh-keys
         #head.vm.provision "gen-ssh-keys", type: "shell", before: "global", \
-        #path: "./provisioning/ssh-gen-head-keys.sh"
+        #path: "./shell-provision/ssh-gen-head-keys.sh"
 
         # Initial configs in ALL nodes
         head.vm.provision "Init", type: "ansible_local", before: "RAID" \
@@ -189,12 +189,11 @@ Vagrant.configure("2") do |config|
                     end
                 end
             end
-            #compute.vm.provision "mock", type: "shell", path: "./provisioning/mock.sh"
         end
     end
 
     # Global provisioning bash script
-    config.vm.provision "ssh", type: "shell", path: "./provisioning/ssh.sh" \
+    config.vm.provision "ssh", type: "shell", path: "./shell-provision/ssh.sh" \
     do |script|
         script.args = [NUM_COMPUTE_NODES, HEAD_NODE_IP]
     end
