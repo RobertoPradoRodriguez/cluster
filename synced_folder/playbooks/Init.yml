@@ -7,10 +7,15 @@
         file: ../variables.yml
         name: var
 
-    - name: Disable SELinux
-      selinux:
-        state: disabled
-
+    #- name: Disable SELinux
+    #  selinux:
+    #    state: disabled
+  
+    - name: Remove selinux
+      yum:
+        name: selinux*
+        state: absent
+  
     - name: Encrypt the root password 
       command: "openssl passwd -crypt {{ var.variables.ROOT_PASSWORD }}"
       register: crypted_password
@@ -35,31 +40,31 @@
     - name: Set keymap
       command: localectl set-keymap es
 
-    #- name: Creates /vagranthome (new home)
+    #- name: Creates /vagrant (new home)
     #  file:
     #    state: directory 
-    #    path: /vagranthome
+    #    path: /vagrant
     #    owner: vagrant
     #    group: vagrant
     #    mode: 0700
 
-      #- name: Copy old home files to new home
-      #  shell: "if [ ! -d /vagranthome/.ssh ]; then \
-      #  cp -rp /home/vagrant/.ssh /vagranthome; fi"
+    - name: Copy old home files to new home
+      shell: "if [ ! -d /vagrant/.ssh ]; then \
+      cp -rp /home/vagrant/.ssh /vagrant; fi"
 
-      #- name: Edit vagrant home (falla al intentar cambiar el usuario en uso)
-      #  user:
-      #    name: vagrant
-      #    home: /vagranthome
-      #    move_home: yes
+    #- name: Edit vagrant home (falla al intentar cambiar el usuario en uso)
+    #  user:
+    #    name: vagrant
+    #    home: /vagrant
+    #    move_home: yes
 
-    #- name: Edit home in /etc/passwd file
-    #  replace: 
-    #    path: /etc/passwd
-    #    regexp: '^vagrant.*$'
-    #    replace: 'vagrant:x:1000:1000::/vagranthome:/bin/bash'
+    - name: Edit home in /etc/passwd file
+      replace: 
+        path: /etc/passwd
+        regexp: '^vagrant.*$'
+        replace: 'vagrant:x:1000:1000::/vagrant:/bin/bash'
 
-    #- name: Restart SSHD service to apply changes
-    #  systemd:
-    #    name: sshd
-    #    state: restarted
+    - name: Restart SSHD service to apply changes
+      systemd:
+        name: sshd
+        state: restarted

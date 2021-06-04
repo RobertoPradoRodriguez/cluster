@@ -33,10 +33,10 @@
 
     - name: Creates cgroup.conf (copy)
       copy: 
-        src: /vagrant/slurm/cgroup.conf
+        src: /synced_folder/slurm/cgroup.conf
         dest: /etc/slurm
       #with_fileglob:
-      #  - "/vagrant/slurm/cgroup.conf"
+      #  - "/synced_folder/slurm/cgroup.conf"
 
     - name: Read variables of 'variables.yml' file
       include_vars:
@@ -62,7 +62,7 @@
 
       - name: COMPUTES - Fill slurm.conf template
         template:
-          src: /vagrant/slurm/slurm.conf.j2
+          src: /synced_folder/slurm/slurm.conf.j2
           dest: /etc/slurm/slurm.conf
       when: ansible_hostname != "head"
 

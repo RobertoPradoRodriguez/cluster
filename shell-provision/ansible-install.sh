@@ -18,3 +18,5 @@ done
 
 # Create ansible.cfg file
 echo -e "[defaults]\nhost_key_checking = False" > $CONFIG
+echo -e "local_tmp = /tmp/.ansible/tmp_local" >> $CONFIG
+echo -e "remote_tmp = /tmp/.ansible/tmp_remote" >> $CONFIG

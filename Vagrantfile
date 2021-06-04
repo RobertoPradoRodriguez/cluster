@@ -5,9 +5,9 @@ HEAD_NODE_CORES         = 1
 NUM_COMPUTE_NODES       = 1
 COMPUTE_NODE_MEM        = 512
 COMPUTE_NODE_CORES      = 1
-DISKS_HEAD              = 2
+DISKS_HEAD              = 5
 DISKS_HEAD_MEM_GB       = 1
-DISKS_COMPUTES          = 2
+DISKS_COMPUTES          = 1
 DISKS_COMPUTES_MEM_GB   = 1
 
 require 'ipaddr'
@@ -16,7 +16,7 @@ CLUSTER_IP_ADDR = CLUSTER_IP_ADDR.succ
 
 Vagrant.configure("2") do |config|
     config.vm.box = "generic/centos8"
-    config.vm.synced_folder "synced_folder", "/vagrant", type: "virtualbox", mount_options: ["dmode=775,fmode=777"]
+    config.vm.synced_folder "synced_folder", "/synced_folder", type: "virtualbox", mount_options: ["dmode=775,fmode=777"]
 
     # Generate /etc/hosts (plugin)
     config.hostmanager.enabled = true
@@ -72,7 +72,7 @@ Vagrant.configure("2") do |config|
         # Initial configs in ALL nodes
         head.vm.provision "Init", type: "ansible_local", before: "RAID" \
         do |ansible|
-            ansible.playbook = "playbooks/Init.yml"
+            ansible.playbook = "/synced_folder/playbooks/Init.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
@@ -80,7 +80,7 @@ Vagrant.configure("2") do |config|
         ### SSH HBA  ###
         head.vm.provision "HostBasedAuthSSH", type: "ansible_local", before: "RAID",
         preserve_order: true do |ansible|
-            ansible.playbook = "playbooks/HostBasedAuthSSH.yml"
+            ansible.playbook = "/synced_folder/playbooks/HostBasedAuthSSH.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
@@ -88,7 +88,7 @@ Vagrant.configure("2") do |config|
         # Create RAID for /home and /share
         head.vm.provision "RAID", type: "ansible_local" \
         do |ansible|
-            ansible.playbook = "playbooks/RAID.yml"
+            ansible.playbook = "/synced_folder/playbooks/RAID.yml"
            ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
@@ -96,7 +96,7 @@ Vagrant.configure("2") do |config|
         ### Grafana ###
         head.vm.provision "grafana", type: "ansible_local", after: "RAID",
         preserve_order: true do |ansible|
-            ansible.playbook = "playbooks/Grafana.yml"
+            ansible.playbook = "/synced_folder/playbooks/Grafana.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
@@ -104,7 +104,7 @@ Vagrant.configure("2") do |config|
         ### Prometheus ###
         head.vm.provision "prometheus", type: "ansible_local", after: "RAID",
         preserve_order: true do |ansible|
-            ansible.playbook = "playbooks/Prometheus.yml"
+            ansible.playbook = "/synced_folder/playbooks/Prometheus.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
@@ -112,7 +112,7 @@ Vagrant.configure("2") do |config|
         ### Software (lmod, compilers and MPI) ###
         head.vm.provision "software", type: "ansible_local", after: "RAID",
         preserve_order: true do |ansible|
-            ansible.playbook = "playbooks/Software.yml"
+            ansible.playbook = "/synced_folder/playbooks/Software.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
@@ -120,7 +120,7 @@ Vagrant.configure("2") do |config|
         ### Slurm ###
         head.vm.provision "Slurm", type: "ansible_local", after: "RAID",
         preserve_order: true do |ansible|
-            ansible.playbook = "playbooks/Slurm.yml"
+            ansible.playbook = "/synced_folder/playbooks/Slurm.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
@@ -128,7 +128,7 @@ Vagrant.configure("2") do |config|
         ### NTP ###
         head.vm.provision "NTP", type: "ansible_local", after: "RAID",
         preserve_order: true do |ansible|
-            ansible.playbook = "playbooks/NTP.yml"
+            ansible.playbook = "/synced_folder/playbooks/NTP.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
@@ -136,7 +136,7 @@ Vagrant.configure("2") do |config|
         #### Directories /scratch in COMPUTES
         head.vm.provision "Scratch", type: "ansible_local", after: "RAID",
         preserve_order: true do |ansible|
-            ansible.playbook = "playbooks/Scratch.yml"
+            ansible.playbook = "/synced_folder/playbooks/Scratch.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
@@ -144,7 +144,7 @@ Vagrant.configure("2") do |config|
         ### Create users in all nodes
         head.vm.provision "Users", type: "ansible_local", after: "RAID" \
         do |ansible|
-            ansible.playbook = "playbooks/Users.yml"
+            ansible.playbook = "/synced_folder/playbooks/Users.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
@@ -153,14 +153,14 @@ Vagrant.configure("2") do |config|
         # Changes in HEAD
         head.vm.provision "NFS-head", type: "ansible_local", after: "RAID" \
         do |ansible|
-            ansible.playbook = "playbooks/NFS-head.yml"
+            ansible.playbook = "/synced_folder/playbooks/NFS-head.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
         # Changes in COMPUTES
         head.vm.provision "NFS-computes", type: "ansible_local", after: :all \
         do |ansible|
-            ansible.playbook = "playbooks/NFS-computes.yml"
+            ansible.playbook = "/synced_folder/playbooks/NFS-computes.yml"
             ansible.inventory_path = "/etc/ansible/hosts"
             ansible.limit = "all"
         end
