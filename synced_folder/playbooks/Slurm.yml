@@ -20,10 +20,27 @@
         state: present
       when: ansible_hostname == "head"
 
-    - name: COMPUTES - Install Slurm client
-      yum:
-        name: ohpc-slurm-client.x86_64
-        state: present
+    - block:
+      - name: COMPUTES - Install Slurm client (dependency 1)
+        dnf:
+          name: libtool-ltdl
+          state: present
+
+      - name: COMPUTES - Install Slurm client (dependency 2)
+        get_url:
+          url: http://mirror.centos.org/centos/7/os/x86_64/Packages/hwloc-libs-1.11.8-4.el7.x86_64.rpm
+          dest: /root
+
+      - name: COMPUTES - Install Slurm client (dependency 2)
+        yum:
+          name: /root/hwloc-libs-1.11.8-4.el7.x86_64.rpm
+          state: present
+          disable_gpg_check: yes
+
+      - name: COMPUTES - Install Slurm client
+        yum:
+          name: ohpc-slurm-client.x86_64
+          state: present
       when: ansible_hostname != "head"
 
    # - name: HEAD - Creates slurmdbd.conf

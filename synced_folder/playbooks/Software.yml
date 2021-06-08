@@ -2,7 +2,7 @@
   become: true
   
   tasks:
-    - name: Install LUA (prerrequisite)
+    - name: Install LUA (dependencies)
       dnf:
         name: "{{ item }}"
         enablerepo: powertools
@@ -11,7 +11,7 @@
         - lua-filesystem
         - lua-posix
 
-    - name: Install lmod, GCC and MPIs
+    - name: Install lmod, valgrind, GCC and MPIs
       yum:
         name: "{{ item }}"
         state: present
@@ -19,6 +19,7 @@
         - lmod-defaults-gnu9-openmpi4-ohpc
         - mpich-ucx-gnu9-ohpc
         - mvapich2-gnu9-ohpc
+        - valgrind-ohpc
 
     #dnf --enablerepo=powertools install lua-filesystem
     #dnf --enablerepo=powertools install lua-posix
