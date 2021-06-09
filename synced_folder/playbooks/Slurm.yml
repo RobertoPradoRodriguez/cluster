@@ -8,37 +8,37 @@
         dest: /root
 
     - name: Install package OpenHPC
-      yum:
+      package:
         name: /root/ohpc-release-2-1.el8.x86_64.rpm
         state: present
         disable_gpg_check: yes
         update_cache: yes
 
     - name: HEAD - Install Slurm server
-      yum:
+      package:
         name: ohpc-slurm-server.x86_64
         state: present
       when: ansible_hostname == "head"
 
     - block:
       - name: COMPUTES - Install Slurm client (dependency 1)
-        dnf:
+        package:
           name: libtool-ltdl
           state: present
 
-      - name: COMPUTES - Install Slurm client (dependency 2)
+      - name: COMPUTES - Install Slurm client (dependency 2 - download)
         get_url:
           url: http://mirror.centos.org/centos/7/os/x86_64/Packages/hwloc-libs-1.11.8-4.el7.x86_64.rpm
           dest: /root
 
-      - name: COMPUTES - Install Slurm client (dependency 2)
-        yum:
+      - name: COMPUTES - Install Slurm client (dependency 2 - install)
+        package:
           name: /root/hwloc-libs-1.11.8-4.el7.x86_64.rpm
           state: present
           disable_gpg_check: yes
 
       - name: COMPUTES - Install Slurm client
-        yum:
+        package:
           name: ohpc-slurm-client.x86_64
           state: present
       when: ansible_hostname != "head"
@@ -94,14 +94,14 @@
     #    flat: yes
     #  when: ansible_hostname == "compute-0"
 
-    - name: HEAD - Open port in firewall
+    - name: HEAD - Allow port on firewall 
       firewalld:
         port: 6817/tcp
         permanent: yes
         state: enabled
       when: ansible_hostname == "head"
 
-    - name: COMPUTES - Open port in firewall
+    - name: COMPUTES - Allow port on firewall 
       firewalld:
         port: 6818/tcp
         permanent: yes

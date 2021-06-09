@@ -11,7 +11,7 @@
       include_role:
         name: grafana
       
-    - name: HEAD - Permit port 3000/TCP in firewall
+    - name: HEAD - Allow port on firewall
       firewalld:
         port: 3000/tcp
         permanent: yes

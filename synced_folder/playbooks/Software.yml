@@ -3,7 +3,7 @@
   
   tasks:
     - name: Install LUA (dependencies)
-      dnf:
+      package:
         name: "{{ item }}"
         enablerepo: powertools
         state: present
@@ -12,7 +12,7 @@
         - lua-posix
 
     - name: Install lmod, valgrind, GCC and MPIs
-      yum:
+      package:
         name: "{{ item }}"
         state: present
       loop:
@@ -26,12 +26,12 @@
     #yum -y install lmod-defaults-gnu9-openmpi4-ohpc
 
     - name: Install Git
-      yum: 
+      package: 
         name: git 
         state: present
 
     - name: HEAD - Install sview for Slurm
-      yum:
+      package:
         name: "{{ item }}"
         state: present
       loop:

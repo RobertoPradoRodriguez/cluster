@@ -3,7 +3,7 @@
 
   tasks:
     - name: Install NFS
-      yum: 
+      package: 
         name: nfs-utils.x86_64 
         state: present
 

@@ -7,14 +7,9 @@
         file: ../variables.yml
         name: var
 
-    #- name: Disable SELinux
-    #  selinux:
-    #    state: disabled
-  
-    - name: Remove selinux
-      yum:
-        name: selinux*
-        state: absent
+    - name: Disable SELinux
+      selinux:
+        state: disabled
   
     - name: Encrypt the root password 
       command: "openssl passwd -crypt {{ var.variables.ROOT_PASSWORD }}"
@@ -27,7 +22,7 @@
         password: "{{ crypted_password.stdout }}"
 
     - name: Install spanish locale
-      dnf:
+      package:
         name: glibc-langpack-es
         state: present
 

@@ -3,7 +3,7 @@
 
   tasks:
     - name: Install NFS
-      yum: 
+      package: 
         name: nfs-utils.x86_64 
         state: present
 
@@ -40,21 +40,21 @@
         name: nfs-server
         state: restarted
 
-    - name: HEAD - Permit NFS service in firewall
+    - name: HEAD - Allow NFS service in firewall
       firewalld:
         service: nfs
         permanent: yes
         state: enabled
         zone: public
 
-    - name: HEAD - Permit mountd service in firewall
+    - name: HEAD - Allow mountd service in firewall
       firewalld:
         service: mountd
         permanent: yes
         state: enabled
         zone: public
     
-    - name: HEAD - Permit rpc-bind service in firewall
+    - name: HEAD - Allow rpc-bind service in firewall
       firewalld:
         service: rpc-bind
         permanent: yes

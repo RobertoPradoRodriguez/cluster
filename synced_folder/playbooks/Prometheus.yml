@@ -36,7 +36,7 @@
           regexp: '.*head:9090.*'
           replace: '       - head:9100'
 
-      - name: HEAD - Permit port 9090/TCP in firewall
+      - name: HEAD - Allow port on firewall 
         firewalld:
           port: 9090/tcp
           permanent: yes
@@ -47,7 +47,7 @@
       include_role:
         name: node-exporter
 
-    - name: Permit port 9100/TCP in firewall
+    - name: Allow port on firewall 
       firewalld:
         port: 9100/tcp
         permanent: yes

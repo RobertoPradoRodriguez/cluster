@@ -15,7 +15,7 @@
           regexp: '^#allow.*$'
           replace: 'allow 10.10.1.0/24'
 
-      - name: HEAD - Permit port 123/UDP in firewall
+      - name: HEAD - Allow port on firewall
         firewalld:
           port: 123/udp
           permanent: yes

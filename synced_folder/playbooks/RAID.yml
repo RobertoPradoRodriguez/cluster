@@ -14,7 +14,7 @@
         SHAREDPATH: "{{ var.variables.SHARED_PATH | default ('', true) }}"
 
     - name: Install mdadm
-      yum: 
+      package: 
         name: mdadm 
         state: present
 
