@@ -1,72 +1,80 @@
-- hosts: all
-  become: true
+  - hosts: all
+    become: true
 
-  tasks:
-    - block:
-      - name: HEAD - edit /etc/ssh/ssh_config [1]
+    tasks:
+      ### CLIENT ###
+      - name: CLIENT - edit /etc/ssh/ssh_config [1]
         replace: 
           path: /etc/ssh/ssh_config
           regexp: '^#\sHost\s.*$'
           replace: 'Host *'
 
-      - name: HEAD - edit /etc/ssh/ssh_config [2]
+      - name: CLIENT - edit /etc/ssh/ssh_config [2]
         replace: 
           path: /etc/ssh/ssh_config
           regexp: '^.*HostbasedAuth.*$'
           replace: '    HostbasedAuthentication yes'
 
-      - name: HEAD - edit /etc/ssh/ssh_config [3]
+      - name: CLIENT - edit /etc/ssh/ssh_config [3]
         lineinfile:
           path: /etc/ssh/ssh_config
           line: '    EnableSSHKeysign yes'
           insertafter: '.*HostbasedAuthentication.*'
-      
-      - name: HEAD - edit /etc/ssh/sshD_config
-        replace: 
-          path: /etc/ssh/sshd_config
-          regexp: '^PasswordAuthentication.*$'
-          replace: 'PasswordAuthentication yes'
-      when: ansible_hostname == "head"
-    
-    - block:
-      - name: COMPUTES - Copy ssh key from head to computes
-        shell: "ssh-keyscan head > /etc/ssh/ssh_known_hosts"
+            
+      ### SERVER ###
+      - name: SERVER - Copy ssh key from every node to all
+        shell: "ssh-keyscan {{ item }} >> /etc/ssh/ssh_known_hosts"
+        loop: "{{ groups.all }}"
 
-      - name: COMPUTES - edit /etc/ssh/sshd_config [1]
+      - name: SERVER - edit /etc/ssh/sshd_config [1]
         replace: 
           path: /etc/ssh/sshd_config
           regexp: '^#HostbasedAuthentication.*$'
           replace: 'HostbasedAuthentication yes'
 
-      - name: COMPUTES - edit /etc/ssh/sshd_config [2]
+      - name: SERVER - edit /etc/ssh/sshd_config [2]
         replace: 
           path: /etc/ssh/sshd_config
           regexp: '^#IgnoreRhosts.*$'
           replace: 'IgnoreRhosts no'
 
-      - name: COMPUTES - edit /etc/ssh/sshd_config [3]
+      - name: SERVER - edit /etc/ssh/sshd_config [3]
         replace: 
           path: /etc/ssh/sshd_config
           regexp: '^#UseDNS.*$'
           replace: 'UseDNS yes'
 
-      - name: COMPUTES - edit /etc/ssh/sshd_config [4]
+      - name: SERVER - edit /etc/ssh/sshd_config [4]
         lineinfile:
           path: /etc/ssh/sshd_config
           line: 'HostbasedAcceptedKeyTypes rsa-sha2-512,rsa-sha2-256,ssh-rsa'
           insertafter: '^HostbasedAuthentication.*'
 
-      - name: COMPUTES - Create shosts.equiv for access control
-        shell: "if [ ! -f /etc/ssh/shosts.equiv ]; \
-        then echo 'head' > /etc/ssh/shosts.equiv; fi"
-
-      - name: COMPUTES - Create /root/.shosts (root login)
-        shell: "if [ ! -f /root/.shosts ]; \
-        then echo -e 'head\troot' > /root/.shosts; fi"     
-      when: ansible_hostname != "head"
+      - name: SERVER - Create shosts.equiv for access control
+        lineinfile:
+          path: /etc/ssh/shosts.equiv
+          line: "{{ item }}"
+          state: present
+          create: yes
+        loop: "{{ groups.all }}"
       
-    - name: Restart SSHD service to apply changes
-      systemd:
-        name: sshd
-        state: restarted
+      - name: SERVER - Create /root/.shosts (root login)
+        lineinfile:
+          path: /root/.shosts
+          line: "{{ item }}   root"
+          state: present
+          create: yes
+        loop: "{{ groups.all }}"
+
+      - name: SERVER (HEAD) - edit /etc/ssh/sshd_config for password authentication
+        replace: 
+          path: /etc/ssh/sshd_config
+          regexp: '^PasswordAuthentication.*$'
+          replace: 'PasswordAuthentication yes'
+        when: ansible_hostname == "head"
+
+      - name: SERVER - Restart SSHD service to apply changes
+        systemd:
+          name: sshd
+          state: restarted
       

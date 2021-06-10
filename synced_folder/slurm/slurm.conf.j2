@@ -24,7 +24,7 @@ KillOnBadExit=1
 #MaxJobCount=5000
 #MaxStepCount=40000
 #MaxTasksPerNode=128
-MpiDefault=pmix
+MpiDefault=pmi2
 #MpiParams=ports=#-#
 #PluginDir=
 #PlugStackConfig=
@@ -127,9 +127,9 @@ JobCompType=jobcomp/none
 JobAcctGatherFrequency=30
 JobAcctGatherType=jobacct_gather/linux
 SlurmctldDebug=info
-#SlurmctldLogFile=
+SlurmctldLogFile=/var/log/slurm/slurm.log
 SlurmdDebug=info
-#SlurmdLogFile=
+SlurmdLogFile=/var/log/slurm/slurm.log
 #SlurmSchedLogFile=
 #SlurmSchedLogLevel=
 #

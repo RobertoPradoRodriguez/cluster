@@ -17,7 +17,7 @@
         state: present
       loop:
         - lmod-defaults-gnu9-openmpi4-ohpc
-        - mpich-ucx-gnu9-ohpc
+        - mpich-ofi-gnu9-ohpc
         - mvapich2-gnu9-ohpc
         - valgrind-ohpc
 
