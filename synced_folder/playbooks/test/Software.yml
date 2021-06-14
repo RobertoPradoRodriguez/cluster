@@ -2,7 +2,6 @@
   become: true
   
   tasks:
-    ### ALL INSTALLATIONS IN EVERY NODE ###
     - name: Install LUA (dependencies)
       package:
         name: "{{ item }}"
@@ -21,6 +20,10 @@
         - mpich-ofi-gnu9-ohpc
         - mvapich2-gnu9-ohpc
         - valgrind-ohpc
+
+    #dnf --enablerepo=powertools install lua-filesystem
+    #dnf --enablerepo=powertools install lua-posix
+    #yum -y install lmod-defaults-gnu9-openmpi4-ohpc
 
     - name: Install Git
       package: 

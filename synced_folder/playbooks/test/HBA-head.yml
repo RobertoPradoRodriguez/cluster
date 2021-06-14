@@ -1,0 +1,21 @@
+- hosts: head
+  become: true
+
+  tasks:
+    - name: HEAD - edit /etc/ssh/ssh_config [1]
+      replace: 
+        path: /etc/ssh/ssh_config
+        regexp: '^#\sHost\s.*$'
+        replace: 'Host *'
+
+    - name: HEAD - edit /etc/ssh/ssh_config [2]
+      replace: 
+        path: /etc/ssh/ssh_config
+        regexp: '^.*HostbasedAuth.*$'
+        replace: '    HostbasedAuthentication yes'
+
+    - name: HEAD - edit /etc/ssh/ssh_config [3]
+      lineinfile:
+        path: /etc/ssh/ssh_config
+        line: '    EnableSSHKeysign yes'
+        insertafter: '.*HostbasedAuthentication.*'

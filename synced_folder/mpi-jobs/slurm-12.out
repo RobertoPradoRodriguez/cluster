@@ -1,0 +1,19 @@
+I am the 0 proccess of 2
+I am the 1 proccess of 2
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 11141 RUNNING AT compute-0
+=   EXIT CODE: 9
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+slurmstepd: error: Detected 1 oom-kill event(s) in StepId=12.0 cgroup. Some of your processes may have been killed by the cgroup out-of-memory handler.
+slurmstepd: error: Detected 1 oom-kill event(s) in StepId=12.0 cgroup. Some of your processes may have been killed by the cgroup out-of-memory handler.
+srun: error: compute-0: task 0: Out Of Memory
+srun: launch/slurm: _step_signal: Terminating StepId=12.0
+[mpiexec@compute-0] HYDT_bscu_wait_for_completion (tools/bootstrap/utils/bscu_wait.c:74): one of the processes terminated badly; aborting
+[mpiexec@compute-0] HYDT_bsci_wait_for_completion (tools/bootstrap/src/bsci_wait.c:22): launcher returned error waiting for completion
+[mpiexec@compute-0] HYD_pmci_wait_for_completion (pm/pmiserv/pmiserv_pmci.c:215): launcher returned error waiting for completion
+[mpiexec@compute-0] main (ui/mpich/mpiexec.c:336): process manager error waiting for completion
+slurmstepd: error: Detected 1 oom-kill event(s) in StepId=12.batch cgroup. Some of your processes may have been killed by the cgroup out-of-memory handler.

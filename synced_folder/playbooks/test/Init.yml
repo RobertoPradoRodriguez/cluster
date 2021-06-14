@@ -10,15 +10,7 @@
     - name: Disable SELinux
       selinux:
         state: disabled
-
-    - name: COMPUTES - Allow local network on firewall
-      firewalld:
-        source: "{{ var.variables.HEAD_NODE_IP }}/22"
-        permanent: yes
-        state: enabled
-      when: ansible_hostname != "head"
-    
-    ### ROOT PASSWORD ###
+  
     - name: Encrypt the root password 
       command: "openssl passwd -crypt {{ var.variables.ROOT_PASSWORD }}"
       register: crypted_password
@@ -29,7 +21,6 @@
         update_password: always 
         password: "{{ crypted_password.stdout }}"
 
-    ### TIMEZONE CONFIGS ###
     - name: Install spanish locale
       package:
         name: glibc-langpack-es
@@ -37,14 +28,30 @@
 
     - name: Set timezone
       command: timedatectl set-timezone Europe/Madrid
+
+    #- name: Set locale
+    #  command: localectl set-locale LANG=es_ES
     
     - name: Set keymap
       command: localectl set-keymap es
 
-    ### NEW HOME FOR VAGRANT
+    #- name: Creates /vagrant (new home)
+    #  file:
+    #    state: directory 
+    #    path: /vagrant
+    #    owner: vagrant
+    #    group: vagrant
+    #    mode: 0700
+
     - name: Copy old home files to new home
       shell: "if [ ! -d /vagrant/.ssh ]; then \
       cp -rp /home/vagrant/.ssh /vagrant; fi"
+
+    #- name: Edit vagrant home (falla al intentar cambiar el usuario en uso)
+    #  user:
+    #    name: vagrant
+    #    home: /vagrant
+    #    move_home: yes
 
     - name: Edit home in /etc/passwd file
       replace: 

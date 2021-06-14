@@ -1,0 +1,57 @@
+- hosts: head
+  become: true
+
+  tasks:
+    - name: Download dashboards in JSON
+      get_url:
+        url: 'https://grafana.com/api/dashboards/{{ item }}'
+        dest: /vagrant/{{ item }}.json
+        owner: vagrant
+        group: vagrant
+        mode: 0666
+      with_items:
+        - 1860
+        - 405
+
+    - name: Modify dashboards
+      lineinfile:
+        path: "/vagrant/{{ item.0 }}.json"
+        insertafter: "{"
+        firstmatch: yes
+        line: '"Dashboard": {
+              "id": null,
+              "uid": null,
+              "title": "{{ item.1 }}",
+              "timezone": "browser",
+              "schemaVersion": 16,
+              "version": 0,
+              "refresh": "25s"
+            },
+            "folderId": 0,
+            "overwrite": true,'
+      with_together:
+        - [1860, 405]
+        - ['Node Exporter Full','Node Exporter Server Metrics']
+
+    #- name: Add dashboards
+    #  uri:
+    #    url: http://localhost:3000/api/dashboards/db
+    #    method: POST
+    #    user: root
+    #    password: toor
+    #    body: /vagrant/{{ item }}.json
+    #    status_code: 200
+    #    body_format: json
+    #    force_basic_auth: yes
+    #    headers: 
+    #      Content-Type: application/json; charset=UTF-8
+    #  with_items:
+    #    - 1860
+    #    - 405
+
+    - name: Add dashboards
+      shell: 'curl -XPOST -i http://root:toor@localhost:3000/api/dashboards/db \
+      --data-binary @/vagrant/{{ item }}.json -H "Content-Type: application/json;charset=UTF-8"'
+      with_items:
+        - 1860
+        - 405

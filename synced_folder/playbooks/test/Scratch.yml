@@ -23,6 +23,7 @@
           fstype: xfs
           dev: "{{ item }}"
         loop: "{{ DISKS_LIST.stdout_lines|flatten(levels=1) }}"
+        #with_items: "{{ DISKS_LIST.stdout_lines }}"
 
       - name: Mount every filesystem in its scratch folder
         mount:

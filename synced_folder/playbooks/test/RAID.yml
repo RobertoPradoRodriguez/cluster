@@ -14,11 +14,10 @@
         SHAREDPATH: "{{ var.variables.SHARED_PATH | default ('', true) }}"
 
     - name: Install mdadm
-      package: 
+      yum: 
         name: mdadm 
         state: present
-    
-    ### CREATE RAID ###
+
     # less than 3 disks
     - name: "< 3 DISKS: Create RAID 1"
       shell: "if [ ! -b /dev/md0 ]; then \
@@ -27,50 +26,60 @@
       when: (DISKS < "3") or (DISKS | trim == '')
     
     # 3 disks
-    - block:
-      - name: Set variable LEVEL (3 disks)
-        set_fact:
-          LEVEL: 1
-        when:
-          - (LEVEL | trim == '') or ((LEVEL != "5") and (LEVEL != "10")) 
+    - name: "3 DISKS: Create RAID 1"
+      shell: "if [ ! -b /dev/md0 ]; then \
+      yes | mdadm --create --verbose /dev/md0 --level=1 \
+      --raid-devices=3 `ls /dev/sd[b-d]`; fi"
+      when:
+        - DISKS == "3"
+        - (LEVEL | trim == '') or ((LEVEL != "5") and (LEVEL != "10")) 
 
-      - name: "3 DISKS: Create RAID 1, 5 or 10. Chosen: RAID {{ LEVEL }}"
-        shell: "if [ ! -b /dev/md0 ]; then \
-        yes | mdadm --create --verbose /dev/md0 --level={{ LEVEL }} \
-        --raid-devices=3 `ls /dev/sd[b-d]`; fi"
+    - name: "3 DISKS: Create RAID 5 or 10. Chosen: RAID {{ LEVEL }}"
+      shell: "if [ ! -b /dev/md0 ]; then \
+      yes | mdadm --create --verbose /dev/md0 --level={{ LEVEL }} \
+      --raid-devices=3 `ls /dev/sd[b-d]`; fi"
       when: 
         - DISKS == "3"
+        #- LEVEL | trim != ''
+        - (LEVEL == "5") or (LEVEL == "10") 
 
     # 4 disks
-    - block:
-      - name: Set variable LEVEL (4 disks)
-        set_fact:
-          LEVEL: 1
-        when:
-          - (LEVEL | trim == '') or ((LEVEL != "5") and (LEVEL != "6") and (LEVEL != "10")) 
-
-      - name: " 4 DISKS: Create RAID 1, 5, 6 or 10. Chosen: RAID {{ LEVEL }}"
-        shell: "if [ ! -b /dev/md0 ]; then \
-        yes | mdadm --create --verbose /dev/md0 --level={{ LEVEL }} \
-        --raid-devices=4 `ls /dev/sd[b-z]`; fi"
+    - name: " 4 DISKS: Create RAID 1"
+      shell: "if [ ! -b /dev/md0 ]; then \
+      yes | mdadm --create --verbose /dev/md0 --level=1 \
+      --raid-devices=4 `ls /dev/sd[b-z]`; fi"
       when:
         - DISKS == "4"
+        - (LEVEL | trim == '') or ((LEVEL != "5") and (LEVEL != "6") and (LEVEL != "10")) 
+
+    - name: " 4 DISKS: Create RAID 5, 6 or 10. Chosen: RAID {{ LEVEL }}"
+      shell: "if [ ! -b /dev/md0 ]; then \
+      yes | mdadm --create --verbose /dev/md0 --level={{ LEVEL }} \
+      --raid-devices=4 `ls /dev/sd[b-z]`; fi"
+      when:
+        - DISKS == "4"
+        #- LEVEL | trim != ''
+        - (LEVEL == "5") or (LEVEL == "6") or (LEVEL == "10")
 
     # 5 or more disks
-    - block:
-      - name: Set variable LEVEL (5 or more disks)
-        set_fact:
-          LEVEL: 1
-        when:
-          - (LEVEL | trim == '') or ((LEVEL != "5") and (LEVEL != "6") and (LEVEL != "10")) 
-
-      - name: " 5 or more DISKS: Create RAID 1, 5, 6 or 10 + SPARE DISK. Chosen: RAID {{ LEVEL }}"
-        shell: "if [ ! -b /dev/md0 ]; then \
-        yes | mdadm --create --verbose /dev/md0 --level={{ LEVEL }} \
-        --raid-devices={{ var.variables.DISKS_HEAD - 1 }} \
-        `ls /dev/sd[c-z]` --spare-devices=1 /dev/sdb; fi"
+    - name: " 5 or more DISKS: Create RAID 1 + SPARE DISK"
+      shell: "if [ ! -b /dev/md0 ]; then \
+      yes | mdadm --create --verbose /dev/md0 --level=1 \
+      --raid-devices={{ var.variables.DISKS_HEAD - 1 }} \
+      `ls /dev/sd[c-z]` --spare-devices=1 /dev/sdb; fi"
       when:
         - DISKS > "4"
+        - (LEVEL | trim == '') or ((LEVEL != "5") and (LEVEL != "6") and (LEVEL != "10")) 
+
+    - name: " 5 or more DISKS: Create RAID 5, 6 or 10 + SPARE DISK. Chosen: RAID {{ LEVEL }}"
+      shell: "if [ ! -b /dev/md0 ]; then \
+      yes | mdadm --create --verbose /dev/md0 --level={{ LEVEL }} \
+      --raid-devices={{ var.variables.DISKS_HEAD - 1 }} \
+      `ls /dev/sd[c-z]` --spare-devices=1 /dev/sdb; fi"
+      when:
+        - DISKS > "4"
+        #- LEVEL | trim != ''
+        - (LEVEL == "5") or (LEVEL == "6") or (LEVEL == "10")
 
     - name: Creates /etc/mdadm.conf for save RAID config
       shell: mdadm --detail --scan > /etc/mdadm.conf
@@ -80,7 +89,7 @@
         vg: vg_raid
         pvs: /dev/md0
 
-    ### LVM: HOME FOLDER ###
+    ### HOME FOLDER ###
     - name: Creates Logical Volume (/home)
       lvol:
         vg: vg_raid
@@ -92,6 +101,14 @@
       filesystem:
         fstype: xfs
         dev: /dev/mapper/vg_raid-lv_home
+
+    #- name: Save home
+    #  copy:
+    #    src: /home/vagrant/.ssh
+    #    dest: /tmp/
+    #    force: yes
+    #    directory_mode: yes
+      #when: ansible_hostname == "head"
 
     - name: Mount virtual partition in HOME
       mount:
@@ -108,7 +125,26 @@
         owner: vagrant
         group: vagrant
     
-    ### LVM: SHARED FOLDER ###
+    #- name: Restore home
+    #  shell: "cp -r /tmp/.ssh/* /home/vagrant/.ssh/"
+
+    #- name: Restore home (not work!)
+    #  copy: 
+    #    src: /tmp/.ssh
+    #    dest: /home/vagrant/
+    #    force: yes
+    #    directory_mode: yes
+    #  when: ansible_hostname == "head"
+    
+    #- name: Change permissions
+    #  file:
+    #    path: /home/vagrant/
+    #    owner: vagrant
+    #    group: vagrant
+    #    mode: '0700'
+    #    recurse: yes
+
+    ### SHARED FOLDER ###
     - name: Creates Logical Volumes (shared path)
       lvol:
         vg: vg_raid

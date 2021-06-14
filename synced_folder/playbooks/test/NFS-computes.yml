@@ -12,7 +12,6 @@
         file: ../variables.yml
         name: var
     
-    ### CUSTOM SHARED DIRECTORY ###
     - block:
       - name: COMPUTES - Creates custom directory for share
         file:
@@ -28,7 +27,6 @@
           fstype: nfs
       when: var.variables.SHARED_PATH | default('', true) | trim != ''
 
-    ### /SHARE DIRECTORY ###
     - block:
       - name: COMPUTES - Creates default /share directory
         file:
@@ -44,9 +42,8 @@
           fstype: nfs
       when: var.variables.SHARED_PATH | default('', true) | trim == ''
 
-    ### HOME DIRECTORY ###
-    # WARNING: Mounting head:/home in /home give us an interface ERROR!
-    # To fix it, now we mounting in /nfs/home
+    ### IMPORTANT: Mounting head:/home in /home give us an interface ERROR!
+    ### To fix, now we mounting in /nfs/home
     - name: COMPUTES - Mount home directory through NFS (users home)
       mount:
         src: head:/home
@@ -54,6 +51,7 @@
         opts: rw,sync
         state: mounted
         fstype: nfs
+      #ignore_errors: yes
 
     - name: Creates an entry to mount by NFS AFTER NETWORK is UP
       cron:

@@ -17,8 +17,7 @@
       include_vars:
         file: ../variables.yml
         name: var
-    
-    ### CONFIGURE NFS FILES ###
+
     - name: HEAD - Edit /etc/exports (custom share path)
       lineinfile:
         path: /etc/exports
@@ -41,7 +40,6 @@
         name: nfs-server
         state: restarted
 
-    ### CONFIGURE FIREWALL ###
     - name: HEAD - Allow NFS service in firewall
       firewalld:
         service: nfs

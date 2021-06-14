@@ -3,6 +3,7 @@
 
   tasks:
     - block:
+      ### CHANGES IN HEAD ###
       - name: HEAD - edit /etc/chrony.conf [1]
         replace: 
           path: /etc/chrony.conf
@@ -26,7 +27,8 @@
           name: firewalld
           state: restarted    
       when: ansible_hostname == "head"
-
+    
+    ### CHANGES IN COMPUTES ###
     - name: COMPUTES - edit /etc/chrony.conf
       replace: 
         path: /etc/chrony.conf

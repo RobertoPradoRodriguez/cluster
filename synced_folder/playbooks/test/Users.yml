@@ -11,7 +11,6 @@
       command: "openssl passwd -crypt {{ var.variables.DEFAULT_USER_PASSWORD }}"
       register: crypted_password
 
-    ### HEAD --> /home ###
     - name: HEAD - Add several users
       user: 
         name: "{{ item }}"
@@ -21,11 +20,11 @@
       loop: "{{ var.users }}"
       when: ansible_hostname == "head"
 
-    ### COMPUTES --> /nfs/home ###
     - name: COMPUTES - Add several users (without /home)
       user: 
         name: "{{ item }}"
         state: present
+        #create_home: no
         home: "/nfs/home/{{ item }}"
         password: "{{ crypted_password.stdout }}"
         group: vagrant

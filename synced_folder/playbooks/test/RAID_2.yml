@@ -17,8 +17,7 @@
       package: 
         name: mdadm 
         state: present
-    
-    ### CREATE RAID ###
+
     # less than 3 disks
     - name: "< 3 DISKS: Create RAID 1"
       shell: "if [ ! -b /dev/md0 ]; then \
@@ -80,7 +79,7 @@
         vg: vg_raid
         pvs: /dev/md0
 
-    ### LVM: HOME FOLDER ###
+    ### HOME FOLDER ###
     - name: Creates Logical Volume (/home)
       lvol:
         vg: vg_raid
@@ -92,6 +91,14 @@
       filesystem:
         fstype: xfs
         dev: /dev/mapper/vg_raid-lv_home
+
+    #- name: Save home
+    #  copy:
+    #    src: /home/vagrant/.ssh
+    #    dest: /tmp/
+    #    force: yes
+    #    directory_mode: yes
+      #when: ansible_hostname == "head"
 
     - name: Mount virtual partition in HOME
       mount:
@@ -108,7 +115,26 @@
         owner: vagrant
         group: vagrant
     
-    ### LVM: SHARED FOLDER ###
+    #- name: Restore home
+    #  shell: "cp -r /tmp/.ssh/* /home/vagrant/.ssh/"
+
+    #- name: Restore home (not work!)
+    #  copy: 
+    #    src: /tmp/.ssh
+    #    dest: /home/vagrant/
+    #    force: yes
+    #    directory_mode: yes
+    #  when: ansible_hostname == "head"
+    
+    #- name: Change permissions
+    #  file:
+    #    path: /home/vagrant/
+    #    owner: vagrant
+    #    group: vagrant
+    #    mode: '0700'
+    #    recurse: yes
+
+    ### SHARED FOLDER ###
     - name: Creates Logical Volumes (shared path)
       lvol:
         vg: vg_raid

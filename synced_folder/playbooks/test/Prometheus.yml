@@ -3,7 +3,6 @@
 
   tasks:
     - block:
-      ### DOWNLOAD ROLES ###
       - name: HEAD - Clone prometheus role (server)
         git:
           repo: https://github.com/cloudalchemy/ansible-prometheus.git
@@ -14,12 +13,10 @@
           repo: https://github.com/cloudalchemy/ansible-node-exporter.git
           dest: /etc/ansible/roles/node-exporter
 
-      ### EXECUTE PROMETHEUS ROLE ###
       - name: HEAD - Execute role as a task (to maintain order)
         include_role:
           name: prometheus
 
-      ### CONFUGURE PROMETHEUS FILES ###
       - name: HEAD - Create file for TARGETS
         lineinfile:
           path: /etc/prometheus/file_sd/node.yml
@@ -45,8 +42,7 @@
           permanent: yes
           state: enabled
       when: ansible_hostname == "head"
-    
-    ### EXECUTE NODE-EXPORTER ROLE ###
+  
     - name: Execute role as a task (to maintain order)
       include_role:
         name: node-exporter
