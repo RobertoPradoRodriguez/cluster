@@ -4,14 +4,14 @@
   tasks:
     - name: Download dashboards in JSON
       get_url:
-        url: 'https://grafana.com/api/dashboards/{{ item }}'
-        dest: /vagrant/{{ item }}.json
+        url: 'https://grafana.com/api/dashboards/{{ item.0 }}/revisions/{{ item.1 }}/download'
+        dest: /vagrant/{{ item.0 }}.json
         owner: vagrant
         group: vagrant
         mode: 0666
-      with_items:
-        - 1860
-        - 405
+      with_together:
+        - [1860, 405]
+        - [23, 8]
 
     - name: Modify dashboards
       lineinfile:

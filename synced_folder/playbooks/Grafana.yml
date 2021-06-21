@@ -2,6 +2,12 @@
   become: true
 
   tasks:
+
+    - name: Read variables of 'variables.yml' file
+      include_vars:
+        file: ../variables.yml
+        name: var
+    
     - name: HEAD - Clone grafana
       git:
         repo: https://github.com/cloudalchemy/ansible-grafana.git
@@ -26,7 +32,7 @@
   vars:
     grafana_security:
       admin_user: root
-      admin_password: toor
+      admin_password: "{{ var.variables.ROOT_PASSWORD }}"
 
     grafana_datasources:
       - name: prometheus
