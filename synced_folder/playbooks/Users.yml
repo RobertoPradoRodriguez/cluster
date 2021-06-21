@@ -17,7 +17,7 @@
         name: "{{ item }}"
         state: present
         password: "{{ crypted_password.stdout }}"
-        group: vagrant
+        groups: vagrant
       loop: "{{ var.users }}"
       when: ansible_hostname == "head"
 
@@ -28,6 +28,6 @@
         state: present
         home: "/nfs/home/{{ item }}"
         password: "{{ crypted_password.stdout }}"
-        group: vagrant
+        groups: vagrant
       loop: "{{ var.users }}"
       when: ansible_hostname != "head"

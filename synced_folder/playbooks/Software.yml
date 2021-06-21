@@ -34,4 +34,5 @@
       loop:
         - xorg-x11-xauth.x86_64
         - slurm-sview-ohpc
+        - libcanberra-gtk2.x86_64
       when: ansible_hostname == "head"

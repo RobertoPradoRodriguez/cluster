@@ -13,15 +13,15 @@
 
 module purge
 module load gnu9
-module load mpich
+module load openmpi4
 
 mpicc hello-mpi.c -o hello-mpi -Wall -Wextra
 #mpirun -np 2 --mca btl_tcp_if_include eth1 -mca plm rsh --hostfile /synced_folder/mpi-jobs/hostfile ./hello-mpi
 
 #MPICH AND MVAPICH2
-mpirun -np $SLURM_NTASKS -iface eth1 ./hello-mpi
+#mpirun -np $SLURM_NTASKS -iface eth1 ./hello-mpi
 
 #OPENMPI
-#mpirun -np $SLURM_NTASKS ./hello-mpi
+mpirun -np $SLURM_NTASKS ./hello-mpi
 
 #srun --mpi=pmi2 ./hello-mpi
