@@ -14,8 +14,14 @@
           path: /etc/ssh/ssh_config
           regexp: '^.*HostbasedAuth.*$'
           replace: '    HostbasedAuthentication yes'
-
+  
       - name: CLIENT - edit /etc/ssh/ssh_config [3]
+        replace: 
+          path: /etc/ssh/ssh_config
+          regexp: '^.*StrictHostKeyChecking.*$'
+          replace: '    StrictHostKeyChecking no'    
+
+      - name: CLIENT - edit /etc/ssh/ssh_config [4]
         lineinfile:
           path: /etc/ssh/ssh_config
           line: '    EnableSSHKeysign yes'
